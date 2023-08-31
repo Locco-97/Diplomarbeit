@@ -1,0 +1,8 @@
+.mypy_cache/
+.venv/
+.vscode/
+kurzschlussanalyzer/__pycache__
+dist/
+build/
+
+kurzschlussanalyzer.spec
