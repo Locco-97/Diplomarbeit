@@ -49,7 +49,9 @@ class App:
         e3 = Entry(self.__window)
         e3.grid(column=0, row=4, sticky=W)
 
-        t4 = Label(self.__window, text="U\u2080 GR Eingabe:")
+        t4 = Label(
+            self.__window, text="U\u2080 GR Eingabe:"
+        )# u1D65 UNICODE für tiefgestelltes 0
         t4.grid(column=0, row=5, sticky=W)
         e4 = Entry(self.__window)
         e4.grid(column=0, row=6, sticky=W)
