@@ -13,70 +13,75 @@ class App:
     __x = 600
     __y = 600
     __filename = ""
+    __dataframefinal = pd. DataFrame()
 
     def __init__(self) -> None:
-        pass
-
-    def create(self) -> None:
         self.__window.title("Diplomarbeit M-Thoma - FL-Rechner")
         self.__window.geometry(f"{self.__x}x{self.__y}")
         self.__window.minsize(self.__x, self.__y)
         self.__window.maxsize(self.__x, self.__y)
 
-        self.label_file_explorer = Label(
+        # -- Label ---
+        self.plotLabel1 = Label(self.__window, text="Diagramm Messdaten")
+        self.plotLabel2 = Label(self.__window, text="Diagramm relaer Kurzschluss")
+        self.t1 = Label(
             self.__window,
-            text="File Explorer using Tkinter",
-            width=100,
-            height=4,
-            fg="blue",
+            text="R\u1D65 Eingabe:"
         )
-        button = Button(
-            self.__window, text="explorer", width=15, command=self.__browse_files
+        self.t2 = Label(
+            self.__window,
+            text="L\u1D65 Eingabe:"
+        ) 
+        self.t4 = Label(
+            self.__window,
+            text="U\u2080 GR Eingabe:"
         )
-        button.grid(column=0, row=0)
-
-        t1 = Label(
-            self.__window, text="R\u1D65 Eingabe:"
-        )  # u1D65 UNICODE für tiefgestelltes V
-        t1.grid(column=0, row=1, sticky=W)
-        e1 = Entry(self.__window)
-        e1.grid(column=0, row=2, sticky=W)
-
-        t2 = Label(
-            self.__window, text="L\u1D65 Eingabe:"
-        )  # u1D65 UNICODE für tiefgestelltes V
-        t2.grid(column=0, row=3, sticky=W)
-        e3 = Entry(self.__window)
-        e3.grid(column=0, row=4, sticky=W)
-
-        t4 = Label(self.__window, text="U\u2080 GR Eingabe:")
-        t4.grid(column=0, row=5, sticky=W)
-        e4 = Entry(self.__window)
-        e4.grid(column=0, row=6, sticky=W)
-
-        t5 = Label(self.__window, text="Leitungswiderstand:")
-        t5.grid(column=0, row=7, sticky=W)
-
-        t6 = Label(self.__window, text="Leitungsinduktivität:")
-        t6.grid(column=0, row=8, sticky=W)
-
-        t7 = Label(
+        self.t5 = Label(
+            self.__window,
+            text="Leitungswiderstand:"
+        )
+        self.t6 = Label(
+            self.__window,
+            text="Leitungsinduktivität:"
+        )
+        self.t7 = Label(
             self.__window,
             text="IK0:",
         )
-        t7.grid(column=0, row=9, sticky=W)
-
-        t8 = Label(
+        self.t8 = Label(
             self.__window,
             text="Zeit für 3T",
         )
-        t8.grid(column=0, row=10, sticky=W)
-
-        t9 = Label(
+        self.t9 = Label(
             self.__window,
             text="max Steigung A/ms:",
         )
-        t9.grid(column=0, row=11, sticky=W)
+
+        # -- Entry ---
+        self.e1 = Entry(self.__window)
+        self.e4 = Entry(self.__window)
+        self.e3 = Entry(self.__window)
+
+        # -- Button ---
+        self.b1= Button(
+            self.__window, text="explorer", width=15, command=self.__browse_files
+        )
+
+    def create_structure(self) -> None:
+        self.plotLabel1.grid(column=0, row=0)
+        self.plotLabel2.grid(column=0, row=2)
+        self.t8.grid(column=0, row=10, sticky=W)
+        self.t9.grid(column=0, row=11, sticky=W)
+        self.t7.grid(column=0, row=9, sticky=W)
+        self.t6.grid(column=0, row=8, sticky=W)
+        self.t5.grid(column=0, row=7, sticky=W)
+        self.t4.grid(column=0, row=5, sticky=W)
+        self.e4.grid(column=0, row=6, sticky=W)
+        self.e3.grid(column=0, row=4, sticky=W)
+        self.t2.grid(column=0, row=3, sticky=W)
+        self.t1.grid(column=0, row=1, sticky=W)
+        self.e1.grid(column=0, row=2, sticky=W)
+        self.b1.grid(column=0, row=0)
 
         tkinter.ttk.Separator(self.__window, orient=VERTICAL).grid(
             column=1, row=0, rowspan=13, sticky="ns", padx=5
@@ -87,12 +92,10 @@ class App:
             title="Select a File",
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
-        # Change label contents
-        self.label_file_explorer.configure(text="File Opened: " + self.__filename)
 
         self.__create_plot()
 
-    def __get_measurement_data(self) -> pd.DataFrame:
+    def __get_measurement_data(self) -> None:
         voltageindex = 0
         currentindex = 0
         endindex = 0
@@ -125,9 +128,7 @@ class App:
                 break
 
         if (currentindex - voltageindex) < 10:
-            df = df.iloc[currentindex - 50 : endindex + 50]
-            return df
-        return None
+            self.__dataframefinal = df.iloc[currentindex - 50 : endindex + 50]
 
     def __create_plot(self) -> None:
         df = self.__get_measurement_data()
@@ -148,7 +149,8 @@ class App:
         canvas1.draw()
 
         # placing the canvas on the Tkinter self.__window
-        canvas.get_tk_widget().grid(column=2, row=0, rowspan=6, columnspan=3, pady=5)
-        canvas1.get_tk_widget().grid(column=2, row=7, rowspan=6, columnspan=3, pady=5)
+        canvas.get_tk_widget().grid(column=0, row=1, rowspan=6, columnspan=3, pady=5)
+        canvas1.get_tk_widget().grid(column=0, row=3, rowspan=6, columnspan=3, pady=5)
+
     def run(self) -> None:
         self.__window.mainloop()  # In der Ereignisschleife auf Eingabe des Benutzers warten.
