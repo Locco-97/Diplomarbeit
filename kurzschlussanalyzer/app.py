@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pandas as pd
 
 
+
 class App:
     """simple App for user interaction"""
 
@@ -151,6 +152,7 @@ class App:
         # placing the canvas on the Tkinter self.__window
         canvas.get_tk_widget().grid(column=0, row=1, rowspan=6, columnspan=3, pady=5)
         canvas1.get_tk_widget().grid(column=0, row=3, rowspan=6, columnspan=3, pady=5)
+
 
     def run(self) -> None:
         self.__window.mainloop()  # In der Ereignisschleife auf Eingabe des Benutzers warten.
