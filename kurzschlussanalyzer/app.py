@@ -1,99 +1,94 @@
-from tkinter import *
-import tkinter.ttk
-from tkinter import filedialog
+import tkinter as tk
+from tkinter import ttk, filedialog
+from PIL import Image, ImageTk
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import pandas as pd
 
-
-class App:
+class App():
     """simple App for user interaction"""
 
-    __window = Tk()
-    __x = 600
-    __y = 600
-    __filename = ""
-    __dataframefinal = pd. DataFrame()
+    def __del__(self):
+        pass
+        #self.root.destroy()
 
-    def __init__(self) -> None:
-        self.__window.title("Diplomarbeit M-Thoma - FL-Rechner")
-        self.__window.geometry(f"{self.__x}x{self.__y}")
-        self.__window.minsize(self.__x, self.__y)
-        self.__window.maxsize(self.__x, self.__y)
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Diplomarbeit M-Thoma - FL-Rechner")
+        self.root.iconphoto(False, tk.PhotoImage(file="kurzschlussanalyzer/images/blt_icon.png"))
 
-        # -- Label ---
-        self.plotLabel1 = Label(self.__window, text="Diagramm Messdaten")
-        self.plotLabel2 = Label(self.__window, text="Diagramm relaer Kurzschluss")
-        self.t1 = Label(
-            self.__window,
-            text="R\u1D65 Eingabe:"
-        )
-        self.t2 = Label(
-            self.__window,
-            text="L\u1D65 Eingabe:"
-        ) 
-        self.t4 = Label(
-            self.__window,
-            text="U\u2080 GR Eingabe:"
-        )
-        self.t5 = Label(
-            self.__window,
-            text="Leitungswiderstand:"
-        )
-        self.t6 = Label(
-            self.__window,
-            text="Leitungsinduktivität:"
-        )
-        self.t7 = Label(
-            self.__window,
-            text="IK0:",
-        )
-        self.t8 = Label(
-            self.__window,
-            text="Zeit für 3T",
-        )
-        self.t9 = Label(
-            self.__window,
-            text="max Steigung A/ms:",
-        )
+        img = Image.open("kurzschlussanalyzer/images/blt_long.png")
+        img_width, img_height = img.size
+        resized_img = img.resize((int(img_width/4), int(img_height/4)))
+        blt_label = ImageTk.PhotoImage(resized_img)
 
-        # -- Entry ---
-        self.e1 = Entry(self.__window)
-        self.e4 = Entry(self.__window)
-        self.e3 = Entry(self.__window)
+        # --- menu left ---
+        left_menu_width = 150
+        self.menu_left = tk.Frame(self.root, width=left_menu_width , bg="#ababab")
+        self.menu_left_upper = tk.Frame(self.menu_left, width=left_menu_width)
+        self.menu_left_lower = tk.Frame(self.menu_left, width=left_menu_width)
 
-        # -- Button ---
-        self.b1= Button(
-            self.__window, text="explorer", width=15, command=self.__browse_files
-        )
+        self.company_label = tk.Label(self.menu_left_upper, image=blt_label)
+        self.company_label.grid(row=0, column=0, columnspan=2)
+        self.test = tk.Label(self.menu_left_upper, text="Kurzschlussanalyzer", font=('Segoe UI', 14, 'bold'))
+        self.test.grid(row=1, column=0, columnspan=2)
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=2, column=0,ipadx=70, pady=10, columnspan=2)
+        self.button_file_select = tk.Button(self.menu_left_upper, text="Explorer", command=self.__browse_files)
+        self.button_file_select.grid(row=3, column=0, columnspan=2)
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=4, column=0,ipadx=70, pady=10, columnspan=2)
 
-    def create_structure(self) -> None:
-        self.plotLabel1.grid(column=0, row=0)
-        self.plotLabel2.grid(column=0, row=2)
-        self.t8.grid(column=0, row=10, sticky=W)
-        self.t9.grid(column=0, row=11, sticky=W)
-        self.t7.grid(column=0, row=9, sticky=W)
-        self.t6.grid(column=0, row=8, sticky=W)
-        self.t5.grid(column=0, row=7, sticky=W)
-        self.t4.grid(column=0, row=5, sticky=W)
-        self.e4.grid(column=0, row=6, sticky=W)
-        self.e3.grid(column=0, row=4, sticky=W)
-        self.t2.grid(column=0, row=3, sticky=W)
-        self.t1.grid(column=0, row=1, sticky=W)
-        self.e1.grid(column=0, row=2, sticky=W)
-        self.b1.grid(column=0, row=0)
+        self.test = tk.Label(self.menu_left_upper, text="R\u1D65:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=5, column=0, sticky=tk.W)
+        self.entry_resistance = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_resistance.grid(row=5, column=1)
+        self.test = tk.Label(self.menu_left_upper, text="L\u1D65:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=6, column=0, sticky=tk.W)
+        self.entry_indutance = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_indutance.grid(row=6, column=1)
+        self.test = tk.Label(self.menu_left_upper, text="U\u2080:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=7, column=0, sticky=tk.W)
+        self.entry_voltage = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_voltage.grid(row=7, column=1)
 
-        tkinter.ttk.Separator(self.__window, orient=VERTICAL).grid(
-            column=1, row=0, rowspan=13, sticky="ns", padx=5
-        )
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
+        
+        self.menu_left_upper.pack(side="top", fill="both", expand=True)
+        self.menu_left_lower.pack(side="top", fill="both", expand=True)
 
-    def __browse_files(self) -> str:
+        # --- right area ---
+        # is created in __create_plot()
+
+        # --- status bar ---
+        self.status_frame = tk.Frame(self.root)
+        self.status = tk.Label(self.status_frame, text="this is the status bar")
+        self.status.pack(fill="both", expand=True)
+
+        self.menu_left.grid(row=0, column=0, rowspan=4, sticky="nsew")
+        self.status_frame.grid(row=4, column=0, columnspan=2, sticky="ew")
+
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
+
+        # --- mainloop ---
+        self.root.mainloop()
+
+    def run(self) -> None:
+        self.root.mainloop()
+    def __browse_files(self) -> None:
         self.__filename = filedialog.askopenfilename(
             title="Select a File",
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
 
-        self.__create_plot()
+        self.__get_measurement_data()
+
+        # TESTING
+        points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
+        self.__create_plot(df_measure=self.__dataframefinal, points=points)
 
     def __get_measurement_data(self) -> None:
         voltageindex = 0
@@ -113,10 +108,14 @@ class App:
             current_value = row.iloc[1]
             next_current_value = (df.iloc[i + 1]).iloc[1]
 
-            if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
+            if (voltage_value + 1) <= next_voltage_value or (
+                voltage_value - 1
+            ) >= next_voltage_value:
                 voltageindex = i
                 startflag = True
-            if (current_value + 1) <= next_current_value or (current_value - 1) >= next_current_value:
+            if (current_value + 1) <= next_current_value or (
+                current_value - 1
+            ) >= next_current_value:
                 currentindex = i
                 startflag = True
 
@@ -130,27 +129,48 @@ class App:
         if (currentindex - voltageindex) < 10:
             self.__dataframefinal = df.iloc[currentindex - 50 : endindex + 50]
 
-    def __create_plot(self) -> None:
-        df = self.__get_measurement_data()
+    def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
+        figure_size = (10, 5)
+        dpi_scale = 100
 
-        # the figure that will contain the plot
-        fig = Figure(figsize=(4, 2), dpi=100)
-        fig1 = Figure(figsize=(4, 2), dpi=100)
+        fig1 = Figure(figsize=figure_size, dpi=dpi_scale)
+        canvas = FigureCanvasTkAgg(fig1, master=self.root)
+        plot1 = fig1.add_subplot(111)
+        fig2 = Figure(figsize=figure_size, dpi=dpi_scale)
+        canvas1 = FigureCanvasTkAgg(fig2, master=self.root)
+        plot2 = fig2.add_subplot(111)
+        
+        # --- Plot 1 ---
+        # plot style settings
+        plot1.grid()
+        plot1.set_title("Diagramm Kurzschluss")
+        plot1.set_xlabel("Time [s]")
+        plot1.set_ylabel("Strom [A]", color="g")
+        secay = plot1.secondary_yaxis("right")
+        secay.set_ylabel("Spannung [U]", color="r")
 
-        plot1 = fig.add_subplot(111)
-        plot2 = fig1.add_subplot(111)
+        # plot data input
+        plot1.plot(df_measure["Time [s]"], df_measure["U Spannung [V]"], color="r", label="Kurzschlussspanung")
+        plot1.plot(df_measure["Time [s]"], df_measure["I Strom [A]"], color="g", label="Kurzschlusstrom")
 
-        # plotting the graph
-        plot1.plot(df["Time [s]"],df["U Spannung [V]"])
-        plot2.plot(df["Time [s]"],df["I Strom [A]"])
-        canvas = FigureCanvasTkAgg(fig, master=self.__window)
-        canvas.draw()
-        canvas1 = FigureCanvasTkAgg(fig1, master=self.__window)
-        canvas1.draw()
+        # --- Plot 2 ---
+        # plot style settings
+        plot2.grid()
+        plot2.set_title("Diagramm Berechung Kurzschluss")
+        plot2.set_xlabel("Time [s]")
+        plot2.set_ylabel("Strom [A]", color="g")
+
+        # plot data input
+        plot2.plot(df_measure["Time [s]"], df_measure["I Strom [A]"], color="g", label="Kurzschlusstrom")
+
+        # plot line input
+        yMin, yMax = plot2.get_ylim()
+        yMean = (yMax - yMin) * 0.75 # set text in the upper half of the line
+
+        for text, pos in points.items():
+            plot2.axvline(x=pos, linestyle="--")
+            plot2.text(pos, yMean, text, ha='center', va='center',rotation='vertical', bbox={'facecolor':'white', 'pad':4})
 
         # placing the canvas on the Tkinter self.__window
-        canvas.get_tk_widget().grid(column=0, row=1, rowspan=6, columnspan=3, pady=5)
-        canvas1.get_tk_widget().grid(column=0, row=3, rowspan=6, columnspan=3, pady=5)
-
-    def run(self) -> None:
-        self.__window.mainloop()  # In der Ereignisschleife auf Eingabe des Benutzers warten.
+        canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
+        canvas.get_tk_widget().grid(column=1, row=1, columnspan=5, pady=5)
