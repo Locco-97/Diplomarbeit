@@ -7,6 +7,7 @@ import pandas as pd
 
 
 
+
 class App:
     """simple App for user interaction"""
 
@@ -149,7 +150,6 @@ class App:
     
     def __create_plot(self) -> None:
         df = self.__dataframefinal
-        print(df.head())
 
         # the figure that will contain the plot
         fig = Figure(figsize=(4, 2), dpi=100)

@@ -31,5 +31,8 @@ def calculate(df, voltage=600):
     i_tau = colcurrent.max() * 0.63
     l_fl = (-r_fl * tau) / np.log(1 - (i_tau / shortcurrent))
     
-    # rückgabe
+    print(f"R_FL: {r_fl}")
+    print(f"L_FL: {l_fl}")
+    print(f"Tau: {tau}")
+    # rückgabewerte
     return r_fl, l_fl, tau
