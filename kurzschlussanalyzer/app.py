@@ -93,27 +93,38 @@ class App:
             title="Select a File",
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
-
+        self.__get_measurement_data()
         self.__create_plot()
 
+     
+
     def __get_measurement_data(self) -> None:
-        voltageindex = 0
-        currentindex = 0
-        endindex = 0
-        endflag = False
-        startflag = False
+        # Initialisieren von Variablen und Flags
+        voltageindex = 0  # Index für Spannung
+        currentindex = 0  # Index für Strom
+        endindex = 0      # Index für das Ende
+        endflag = False   # Flag, um das Ende zu markieren
+        startflag = False # Flag, um den Start zu markieren
 
+        # CSV-Datei in einen DataFrame einlesen
         df = pd.read_csv(self.__filename, sep=",")
-        df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
 
+        # Den DataFrame auf die relevanten Spalten reduzieren
+        df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
+        
+
+        # Die Strom-Spalte in ei
+        # ner separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
+        # Schleife über die Zeilen des DataFrames
         for i, row in df.iterrows():
-            voltage_value = row.iloc[2]
-            next_voltage_value = (df.iloc[i + 1]).iloc[2]
-            current_value = row.iloc[1]
-            next_current_value = (df.iloc[i + 1]).iloc[1]
+            voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
+            next_voltage_value = (df.iloc[i + 1]).iloc[2]  # Spannungswert für die nächste Zeile
+            current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
+            next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
 
+            # Bedingungen überprüfen, um den Start zu markieren von der Messung
             if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
                 voltageindex = i
                 startflag = True
@@ -121,18 +132,24 @@ class App:
                 currentindex = i
                 startflag = True
 
+            # Bedingungen überprüfen, um das Ende zu markieren
             if current_value >= colcurrent.max() * 0.99 and startflag:
                 endindex = i
                 endflag = True
 
+            # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
             if endflag and startflag:
                 break
 
+        # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
         if (currentindex - voltageindex) < 10:
+            # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
             self.__dataframefinal = df.iloc[currentindex - 50 : endindex + 50]
-
+    
+    
     def __create_plot(self) -> None:
-        df = self.__get_measurement_data()
+        df = self.__dataframefinal
+        print(df.head())
 
         # the figure that will contain the plot
         fig = Figure(figsize=(4, 2), dpi=100)
@@ -142,8 +159,8 @@ class App:
         plot2 = fig1.add_subplot(111)
 
         # plotting the graph
-        plot1.plot(df["Time [s]"],df["U Spannung [V]"])
-        plot2.plot(df["Time [s]"],df["I Strom [A]"])
+        plot1.plot(df["Time [s]"], df["U Spannung [V]"])
+        plot2.plot(df["Time [s]"], df["I Strom [A]"])
         canvas = FigureCanvasTkAgg(fig, master=self.__window)
         canvas.draw()
         canvas1 = FigureCanvasTkAgg(fig1, master=self.__window)

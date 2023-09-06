@@ -1,26 +1,35 @@
-voltage = 600 #Testwert
+# calc.py
 
-import numpy
-from numpy import log
+import numpy as np
 
-def calculate(self,voltage):
-    df = self.__dataframefinal #Dataframefinal wird in df(dataframe) kopiert für private Methode
+def calculate(df, voltage=600):
+    # Finde die Zeit in Zeile 50
+    start_time = df.iloc[50]["Time [s]"]
     
+    # Berechne I_max
     colcurrent = df["I Strom [A]"]
-    for i, row in df.iterrows():
-        current_value = row.iloc[1]
-        current_value >= colcurrent.max()
-        shortcurrent = current_value
-        r_fl = (voltage/shortcurrent)
-        
-    colcurrent = df["I Strom [A]"]
-    for i, row in df.iterrows():
-        current_value = row.iloc[1]
-        current_value >= colcurrent.max() * 0.63
-        current_half = row.iloc[1]
-        l_fl = (-(r_fl*tau)/log(1-(current_half/shortcurrent)))
+    I_max = colcurrent.max()
+    r_fl = (voltage / I_max)
     
+    # Berechne r_fl
+    for _, row in df.iterrows():
+        current_value = row["I Strom [A]"]
+        if current_value >= I_max:
+            shortcurrent = current_value
+            r_fl = (voltage / shortcurrent)
+            break  # Beende die Schleife, sobald I_max erreicht ist
 
+    # Finde die Zeit, wenn der Strom 63% von I_max erreicht
+    target_current = 0.63 * I_max
+    for _, row in df.iterrows():
+        current_value = row["I Strom [A]"]
+        if current_value >= target_current:
+            tau = row["Time [s]"] - start_time
+            break  # Beende die Schleife, sobald 63% von I_max erreicht ist
 
-
-  
+    # Berechne l_fl
+    i_tau = colcurrent.max() * 0.63
+    l_fl = (-r_fl * tau) / np.log(1 - (i_tau / shortcurrent))
+    
+    # rückgabe
+    return r_fl, l_fl, tau
