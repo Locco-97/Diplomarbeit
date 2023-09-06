@@ -90,27 +90,36 @@ class App():
         points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
         self.__create_plot(df_measure=self.__dataframefinal, points=points)
 
+     
+
     def __get_measurement_data(self) -> None:
-        voltageindex = 0
-        currentindex = 0
-        endindex = 0
-        endflag = False
-        startflag = False
+        # Initialisieren von Variablen und Flags
+        voltageindex = 0  # Index für Spannung
+        currentindex = 0  # Index für Strom
+        endindex = 0      # Index für das Ende
+        endflag = False   # Flag, um das Ende zu markieren
+        startflag = False # Flag, um den Start zu markieren
 
+        # CSV-Datei in einen DataFrame einlesen
         df = pd.read_csv(self.__filename, sep=",")
-        df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
 
+        # Den DataFrame auf die relevanten Spalten reduzieren
+        df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
+        
+
+        # Die Strom-Spalte in ei
+        # ner separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
+        # Schleife über die Zeilen des DataFrames
         for i, row in df.iterrows():
-            voltage_value = row.iloc[2]
-            next_voltage_value = (df.iloc[i + 1]).iloc[2]
-            current_value = row.iloc[1]
-            next_current_value = (df.iloc[i + 1]).iloc[1]
+            voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
+            next_voltage_value = (df.iloc[i + 1]).iloc[2]  # Spannungswert für die nächste Zeile
+            current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
+            next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
 
-            if (voltage_value + 1) <= next_voltage_value or (
-                voltage_value - 1
-            ) >= next_voltage_value:
+            # Bedingungen überprüfen, um den Start zu markieren von der Messung
+            if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
                 voltageindex = i
                 startflag = True
             if (current_value + 1) <= next_current_value or (
@@ -119,14 +128,18 @@ class App():
                 currentindex = i
                 startflag = True
 
+            # Bedingungen überprüfen, um das Ende zu markieren
             if current_value >= colcurrent.max() * 0.99 and startflag:
                 endindex = i
                 endflag = True
 
+            # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
             if endflag and startflag:
                 break
 
+        # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
         if (currentindex - voltageindex) < 10:
+            # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
             self.__dataframefinal = df.iloc[currentindex - 50 : endindex + 50]
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
