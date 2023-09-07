@@ -59,5 +59,4 @@ def real_current(size_df, l_fl, r_fl):
     df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
     print("test df 1")
     print(df_real)
-
-    return 
+    return df_real

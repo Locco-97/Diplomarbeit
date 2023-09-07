@@ -95,7 +95,8 @@ class App():
         points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
         print("test df real")
         print(df_real)
-        self.__create_plot(df_measure=self.df_measure, points=points)
+        self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
+
        
      
 
@@ -150,6 +151,7 @@ class App():
                 self.df_measure = self.df_measure.reset_index()
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
+
         figure_size = (10, 5)
         dpi_scale = 100
 
@@ -179,6 +181,14 @@ class App():
         plot2.set_title("Diagramm Berechung Kurzschluss")
         plot2.set_xlabel("Time [s]")
         plot2.set_ylabel("Strom [A]", color="g")
+        # Nachdem Sie die Daten in plot2 gezeichnet haben
+
+        # Minimale und maximale Zeitwerte aus df_real abrufen
+        x_min = df_real["Time [s]"].min()
+        x_max = df_real["Time [s]"].max()
+
+        # Grenzen der x-Achse für plot2 festlegen
+        plot2.set_xlim(x_min, x_max)
 
         # plot data input
         plot2.plot(df_real["Time [s]"], df_real["I Strom [A]"], color="g", label="Kurzschlusstrom")
