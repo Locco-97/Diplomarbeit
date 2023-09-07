@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import pandas as pd
+from kurzschlussanalyzer.calc import calculate 
+from kurzschlussanalyzer.calc import real_current
 
 class App():
     """simple App for user interaction"""
@@ -85,11 +87,16 @@ class App():
         )
 
         self.__get_measurement_data()
-
+        r_fl, l_fl, tau, size_df = calculate(self.df_measure)
+        df_real = real_current(size_df, l_fl, r_fl)
+        
+        print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         # TESTING
         points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
+        print("test df real")
+        print(df_real)
         self.__create_plot(df_measure=self.df_measure, points=points)
-
+       
      
 
     def __get_measurement_data(self) -> None:
@@ -109,8 +116,7 @@ class App():
         df = df.iloc[:, [0, 5, 10]]
         df.columns = ["Time [s]", "I Strom [A]", "U Spannung [V]"]
         
-        # Die Strom-Spalte in ei
-        # ner separaten Variable speichern
+        # Die Strom-Spalte in einer separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
         # Schleife über die Zeilen des DataFrames
@@ -124,14 +130,12 @@ class App():
             if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
                 voltageindex = i
                 startflag = True
-            if (current_value + 1) <= next_current_value or (
-                current_value - 1
-            ) >= next_current_value:
+            if (current_value + 1) <= next_current_value or (current_value - 1) >= next_current_value:
                 currentindex = i
                 startflag = True
 
             # Bedingungen überprüfen, um das Ende zu markieren
-            if current_value >= colcurrent.max() * 0.99 and startflag:
+            if current_value >= colcurrent.max() * 0.995 and startflag:
                 endindex = i
                 endflag = True
 
@@ -143,6 +147,7 @@ class App():
         if (currentindex - voltageindex) < 100:
             # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
                 self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
+                self.df_measure = self.df_measure.reset_index()
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
         figure_size = (10, 5)
@@ -176,7 +181,7 @@ class App():
         plot2.set_ylabel("Strom [A]", color="g")
 
         # plot data input
-        plot2.plot(df_measure["Time [s]"], df_measure["I Strom [A]"], color="g", label="Kurzschlusstrom")
+        plot2.plot(df_real["Time [s]"], df_real["I Strom [A]"], color="g", label="Kurzschlusstrom")
 
         # plot line input
         yMin, yMax = plot2.get_ylim()

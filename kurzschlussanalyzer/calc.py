@@ -3,12 +3,17 @@
 import numpy as np
 import pandas as pd
 
+
+
+
 def calculate(df):
-    
+
     # suchen I_max
     colcurrent = df["I Strom [A]"]
-    I_max = colcurrent.max()
-    df_size = len(df)
+    #global i_max
+    i_max = colcurrent.max()
+    #global size_df 
+    size_df = len(df)
     
     # abfragen der Zeit in Zeile 50 (Start Ereigniss)
     start_time = df.iloc[50]["Time [s]"]
@@ -18,10 +23,7 @@ def calculate(df):
     
     # spannung bei I_max abfragen
     index_i_max = df["I Strom [A]"].idxmax()
-    print(index_i_max)
-    print(df)
     u_l = df.iloc[index_i_max]["U Spannung [V]"]
-    print(u_l)
     
     # abfrage um alte Messmethode zu erkennen und Spannung im endzustand zu nehmen
     if u_0 <= 1:
@@ -31,10 +33,10 @@ def calculate(df):
     
         
     # Berechne r_fl
-    r_fl = (voltage / I_max)
+    r_fl = (voltage / i_max)
 
     # Findet die Zeit, wenn der Strom 63% von I_max erreicht (1 Tau)
-    target_current = 0.63 * I_max
+    target_current = 0.63 * i_max
     for _, row in df.iterrows():
         current_value = row["I Strom [A]"]
         if current_value >= target_current:
@@ -43,13 +45,19 @@ def calculate(df):
 
     # Berechne l_fl
     i_tau = colcurrent.max() * 0.63
-    l_fl = (-r_fl * tau) / np.log(1 - (i_tau / I_max))
+    l_fl = (-r_fl * tau) / np.log(1 - (i_tau / i_max))
+
     
-    data = {"Timer [s]": np.arange(0, df_size * 0.00005, 0.00005)}
+    # rückgabewerte
+    return r_fl, l_fl, tau, size_df
+
+def real_current(size_df, l_fl, r_fl):
+    i_real = 600/r_fl
+    data = {"Time [s]": np.arange(0, size_df * 0.00005, 0.00005)}
     #Dataframe zum realen kurzschluss erstellen
     df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
-
+    df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
+    print("test df 1")
     print(df_real)
 
-    # rückgabewerte
-    return r_fl, l_fl, tau
+    return 
