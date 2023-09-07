@@ -104,9 +104,11 @@ class App():
         df = pd.read_csv(self.__filename, sep=",")
 
         # Den DataFrame auf die relevanten Spalten reduzieren
-        df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
+        #df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
+        #Dataframe reduzieren auf relevante Spalten und überschrift vergeben
+        df = df.iloc[:, [0, 5, 10]]
+        df.columns = ["Time [s]", "I Strom [A]", "U Spannung [V]"]
         
-
         # Die Strom-Spalte in ei
         # ner separaten Variable speichern
         colcurrent = df["I Strom [A]"]
@@ -138,9 +140,9 @@ class App():
                 break
 
         # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
-        if (currentindex - voltageindex) < 10:
+        if (currentindex - voltageindex) < 100:
             # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
-            self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
+                self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
         figure_size = (10, 5)
