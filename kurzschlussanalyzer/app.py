@@ -88,7 +88,7 @@ class App():
 
         # TESTING
         points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
-        self.__create_plot(df_measure=self.__dataframefinal, points=points)
+        self.__create_plot(df_measure=self.df_measure, points=points)
 
      
 
@@ -140,7 +140,7 @@ class App():
         # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
         if (currentindex - voltageindex) < 10:
             # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
-            self.__dataframefinal = df.iloc[currentindex - 50 : endindex + 50]
+            self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
         figure_size = (10, 5)
