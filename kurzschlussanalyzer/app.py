@@ -7,6 +7,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pandas as pd
 from kurzschlussanalyzer.calc import calculate 
 from kurzschlussanalyzer.calc import real_current
+from kurzschlussanalyzer.calc import safety_function
+
 
 class App():
     """simple App for user interaction"""
@@ -61,8 +63,6 @@ class App():
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
 
-        # --- right area ---
-        # is created in __create_plot()
 
         # --- status bar ---
         self.status_frame = tk.Frame(self.root)
@@ -89,10 +89,11 @@ class App():
         self.__get_measurement_data()
         r_fl, l_fl, tau, size_df = calculate(self.df_measure)
         df_real = real_current(size_df, l_fl, r_fl)
-        
+        ddl_start, ddl_stop = safety_function(df_real, 1e3, 1e3, 1, 5)
+        print(ddl_start)
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         # TESTING
-        points = {"Start": 4.035, "Stop": 4.036, "xyz": 4.05}
+        points = {"Start": ddl_start, "Stop": ddl_stop, "xyz": 4.05}
         print("test df real")
         print(df_real)
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)

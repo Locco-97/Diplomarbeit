@@ -60,3 +60,51 @@ def real_current(size_df, l_fl, r_fl):
     print("test df 1")
     print(df_real)
     return df_real
+""" 
+def safety_function(df_real):
+    ddl_start =0
+    ddl_stop = 0
+    
+    df_real['Delta_I'] = df_real['I Strom [A]'].diff()
+    # Den ersten Zeitpunkt finden, an dem der Unterschied größer als 0.25A ist
+    ddl_start_row = df_real[df_real['Delta_I'] > 20].iloc[0]
+
+    ddl_start = ddl_start_row['Time [s]']
+    return ddl_start, ddl_stop """
+
+
+def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
+    # Berechnung des Stromanstiegs
+    df_real['di/dt'] = df_real['I Strom [A]'].diff() / (df_real['Time [s]'].diff())
+
+    # Finden des Startzeitpunkts der Analyse (wo di/dt > E)
+    start_time = df_real[df_real['di/dt'] > E]['Time [s]'].iloc[0]
+
+    # Finden des Endzeitpunkts der Analyse (wo di/dt < F nach start_time)
+    end_time = df_real[(df_real['di/dt'] < F) & (df_real['Time [s]'] > start_time)]['Time [s]'].iloc[0]
+
+    # Überprüfen, ob Delta I den Wert Delta_Imax während der Analysezeit übersteigt
+    max_delta_I = df_real[(df_real['Time [s]'] >= start_time) & (df_real['Time [s]'] <= end_time)]['I Strom [A]'].diff().max()
+
+    if max_delta_I > Delta_Imax:
+        trigger_time = df_real[df_real['I Strom [A]'].diff() == max_delta_I]['Time [s]'].iloc[0]
+
+        # Überprüfen, ob der Stromwert nach der Verzögerung t_Delta_Imax immer noch über Delta_Imax liegt
+        time_after_delay = trigger_time + (t_Delta_Imax / 1000)  # Konvertierung von ms in s
+        current_after_delay = df_real[df_real['Time [s]'] == time_after_delay]['I Strom [A]'].iloc[0]
+
+        if current_after_delay - df_real[df_real['Time [s]'] == trigger_time]['I Strom [A]'].iloc[0] > Delta_Imax:
+            return trigger_time
+        else:
+            return None
+    else:
+        return None
+
+
+    # Analyse des df_real DataFrames
+    result = safety_function(df_real, 1e3, 1e3, 1, 5)
+    if result:
+        print(f"Auslösung aktiviert bei {result} s")
+    else:
+        print("Keine Auslösung aktiviert.")
+
