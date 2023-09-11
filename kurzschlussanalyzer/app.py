@@ -15,7 +15,6 @@ class App():
 
     def __del__(self):
         pass
-        #self.root.destroy()
 
     def __init__(self):
         self.root = tk.Tk()
@@ -27,9 +26,9 @@ class App():
         resized_img = img.resize((int(img_width/4), int(img_height/4)))
         blt_label = ImageTk.PhotoImage(resized_img)
 
-        # --- menu left ---
+        # --- Menu Gesaltung ---
         left_menu_width = 150
-        self.menu_left = tk.Frame(self.root, width=left_menu_width , bg="#ababab")
+        self.menu_left = tk.Frame(self.root, width=left_menu_width , bg="#ababab") #setzt die Hintergrundfarbe auf grau (ababab)
         self.menu_left_upper = tk.Frame(self.menu_left, width=left_menu_width)
         self.menu_left_lower = tk.Frame(self.menu_left, width=left_menu_width)
 
@@ -89,7 +88,7 @@ class App():
         self.__get_measurement_data()
         r_fl, l_fl, tau, size_df = calculate(self.df_measure)
         df_real = real_current(size_df, l_fl, r_fl)
-        ddl_start, ddl_stop = safety_function(df_real, 1e3, 1e3, 1, 5)
+        ddl_start, ddl_stop = safety_function(df_real, 6, 15, 1000, 20)
         print(ddl_start)
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         # TESTING

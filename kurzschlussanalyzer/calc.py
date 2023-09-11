@@ -81,7 +81,7 @@ def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     start_time = df_real[df_real['di/dt'] > E]['Time [s]'].iloc[0]
 
     # Finden des Endzeitpunkts der Analyse (wo di/dt < F nach start_time)
-    end_time = df_real[(df_real['di/dt'] < F) & (df_real['Time [s]'] > start_time)]['Time [s]'].iloc[0]
+    #end_time = df_real[(df_real['di/dt'] < F) & (df_real['Time [s]'] > start_time)]['Time [s]'].iloc[0]
 
     # Überprüfen, ob Delta I den Wert Delta_Imax während der Analysezeit übersteigt
     max_delta_I = df_real[(df_real['Time [s]'] >= start_time) & (df_real['Time [s]'] <= end_time)]['I Strom [A]'].diff().max()
