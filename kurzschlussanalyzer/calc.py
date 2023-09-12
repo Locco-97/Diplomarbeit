@@ -51,15 +51,30 @@ def calculate(df):
     # rückgabewerte
     return r_fl, l_fl, tau, size_df
 
-def real_current(size_df, l_fl, r_fl):
-    i_real = 600/r_fl
+def real_current(size_df, l_fl, r_fl,df):
+    """"
+    u_max = df["U Spannung [V]"].max()
+    i_real = u_max/r_fl
     data = {"Time [s]": np.arange(0, size_df * 0.00005, 0.00005)}
     #Dataframe zum realen kurzschluss erstellen
     df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
     df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
+    """
+    data = {"Time [s]": np.arange(0, len(df) * 0.00005, 0.00005)}
+
+    # Dataframe zum realen kurzschluss erstellen
+    df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
+
+    # Füge die Werte von "U Spannung [V]" aus dem ursprünglichen df hinzu
+    df_real["U Spannung [V]"] = df["U Spannung [V]"].values
+
+    # Berechne "I Strom [A]" für jeden Zeitpunkt unter Verwendung der aktuellen Spannung
+    df_real["I Strom [A]"] = df_real.apply(lambda row: (row["U Spannung [V]"]/r_fl) * (1 - np.exp((-r_fl / l_fl) * row["Time [s]"])), axis=1)
+
     print("test df 1")
     print(df_real)
     return df_real
+    
 """ 
 def safety_function(df_real):
     ddl_start =0
@@ -72,7 +87,7 @@ def safety_function(df_real):
     ddl_start = ddl_start_row['Time [s]']
     return ddl_start, ddl_stop """
 
-
+""""
 def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     # Berechnung des Stromanstiegs
     df_real['di/dt'] = df_real['I Strom [A]'].diff() / (df_real['Time [s]'].diff())
@@ -108,3 +123,4 @@ def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     else:
         print("Keine Auslösung aktiviert.")
 
+"""

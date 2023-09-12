@@ -7,7 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pandas as pd
 from kurzschlussanalyzer.calc import calculate 
 from kurzschlussanalyzer.calc import real_current
-from kurzschlussanalyzer.calc import safety_function
+#from kurzschlussanalyzer.calc import safety_function
 
 
 class App():
@@ -26,12 +26,12 @@ class App():
         resized_img = img.resize((int(img_width/4), int(img_height/4)))
         blt_label = ImageTk.PhotoImage(resized_img)
 
-        # --- Menu Gesaltung ---
+        # Menu Gesaltung
         left_menu_width = 150
         self.menu_left = tk.Frame(self.root, width=left_menu_width , bg="#ababab") #setzt die Hintergrundfarbe auf grau (ababab)
         self.menu_left_upper = tk.Frame(self.menu_left, width=left_menu_width)
         self.menu_left_lower = tk.Frame(self.menu_left, width=left_menu_width)
-
+        # Fenster gestaltung
         self.company_label = tk.Label(self.menu_left_upper, image=blt_label)
         self.company_label.grid(row=0, column=0, columnspan=2)
         self.test = tk.Label(self.menu_left_upper, text="Kurzschlussanalyzer", font=('Segoe UI', 14, 'bold'))
@@ -42,7 +42,7 @@ class App():
         self.button_file_select.grid(row=3, column=0, columnspan=2)
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
         self.sep.grid(row=4, column=0,ipadx=70, pady=10, columnspan=2)
-
+        # Text und Eingabefelder erstellen
         self.test = tk.Label(self.menu_left_upper, text="R\u1D65:", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=5, column=0, sticky=tk.W)
         self.entry_resistance = tk.Entry(self.menu_left_upper, width=10)
@@ -63,9 +63,9 @@ class App():
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
 
 
-        # --- status bar ---
+        # status bar 
         self.status_frame = tk.Frame(self.root)
-        self.status = tk.Label(self.status_frame, text="this is the status bar")
+        self.status = tk.Label(self.status_frame, text="Programmstatus Anzeige")
         self.status.pack(fill="both", expand=True)
 
         self.menu_left.grid(row=0, column=0, rowspan=4, sticky="nsew")
@@ -74,7 +74,7 @@ class App():
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
-        # --- mainloop ---
+        # mainloop
         self.root.mainloop()
 
     def run(self) -> None:
@@ -85,13 +85,16 @@ class App():
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
 
-        self.__get_measurement_data()
-        r_fl, l_fl, tau, size_df = calculate(self.df_measure)
-        df_real = real_current(size_df, l_fl, r_fl)
-        ddl_start, ddl_stop = safety_function(df_real, 6, 15, 1000, 20)
+        self.__get_measurement_data() #funktionsaufruf daten einlesen
+        r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
+        df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
+        #ddl_start, ddl_stop = safety_function(df_real, 6, 15, 1000, 20)
+        ddl_start = 0.5
+        ddl_stop = 1
         print(ddl_start)
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
-        # TESTING
+        
+        # Anzeigelinien in Plot
         points = {"Start": ddl_start, "Stop": ddl_stop, "xyz": 4.05}
         print("test df real")
         print(df_real)
@@ -116,39 +119,74 @@ class App():
         #Dataframe reduzieren auf relevante Spalten und überschrift vergeben
         df = df.iloc[:, [0, 5, 10]]
         df.columns = ["Time [s]", "I Strom [A]", "U Spannung [V]"]
+   
+         # Überprüfen, ob das Verfahren 50V oder 600V basiert auf den ersten Zeilen
+        avg_voltage_first_rows = df["U Spannung [V]"].head(50).mean()
+        if avg_voltage_first_rows < 100:  # Mittelwert ersten 50 Messungen <100VDC
+            Messverfahren = 1  # Merker Messverfahren = 1
+        else:
+            Messverfahren = 0  # Merker Messverfahren 2
+
+   
         
         # Die Strom-Spalte in einer separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
-        # Schleife über die Zeilen des DataFrames
-        for i, row in df.iterrows():
-            voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
-            next_voltage_value = (df.iloc[i + 1]).iloc[2]  # Spannungswert für die nächste Zeile
-            current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
-            next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
+        #<50 VDC Ereignissanalyse
+        if Messverfahren == 1:
+            # Schleife über die Zeilen des DataFrames
+            for i, row in df.iterrows():
+                voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
+                next_voltage_value = (df.iloc[i + 1]).iloc[2]  # Spannungswert für die nächste Zeile
+                current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
+                next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
 
-            # Bedingungen überprüfen, um den Start zu markieren von der Messung
-            if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
-                voltageindex = i
-                startflag = True
-            if (current_value + 1) <= next_current_value or (current_value - 1) >= next_current_value:
-                currentindex = i
-                startflag = True
+                # Bedingungen überprüfen, um den Start zu markieren von der Messung
+                if (voltage_value + 1) <= next_voltage_value or (voltage_value - 1) >= next_voltage_value:
+                    voltageindex = i
+                    startflag = True
+                if (current_value + 1) <= next_current_value or (current_value - 1) >= next_current_value:
+                    currentindex = i
+                    startflag = True
 
-            # Bedingungen überprüfen, um das Ende zu markieren
-            if current_value >= colcurrent.max() * 0.995 and startflag:
-                endindex = i
-                endflag = True
+                # Bedingungen überprüfen, um das Ende zu markieren
+                if current_value >= colcurrent.max() * 0.995 and startflag:
+                    endindex = i
+                    endflag = True
 
-            # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
-            if endflag and startflag:
-                break
+                # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
+                if endflag and startflag:
+                    break
 
-        # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
-        if (currentindex - voltageindex) < 100:
-            # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
-                self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
-                self.df_measure = self.df_measure.reset_index()
+            # Überprüfen, ob der Abstand zwischen Start und Ende klein genug ist
+            if (currentindex - voltageindex) < 100:
+                # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
+                    self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
+                    self.df_measure = self.df_measure.reset_index()
+       
+        #>50VDC Ereignissanalyse
+        if Messverfahren != 1:
+            # Schleife über die Zeilen des DataFrames
+            for i, row in df.iterrows():
+                current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
+                next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
+
+                # Bedingungen überprüfen, um den Start zu markieren von der Messung
+                if (current_value + 3) <= next_current_value:
+                    currentindex = i
+                    startflag = True
+
+                # Bedingungen überprüfen, um das Ende zu markieren
+                if current_value >= colcurrent.max() * 0.995 and startflag:
+                    endindex = i
+                    endflag = True
+                    
+                # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
+                if endflag and startflag:
+                   # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
+                    self.df_measure = df.iloc[currentindex - 75 : endindex + 75]
+                    self.df_measure = self.df_measure.reset_index() 
+                    break
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
 
@@ -181,7 +219,7 @@ class App():
         plot2.set_title("Diagramm Berechung Kurzschluss")
         plot2.set_xlabel("Time [s]")
         plot2.set_ylabel("Strom [A]", color="g")
-        # Nachdem Sie die Daten in plot2 gezeichnet haben
+ 
 
         # Minimale und maximale Zeitwerte aus df_real abrufen
         x_min = df_real["Time [s]"].min()
@@ -201,6 +239,6 @@ class App():
             plot2.axvline(x=pos, linestyle="--")
             plot2.text(pos, yMean, text, ha='center', va='center',rotation='vertical', bbox={'facecolor':'white', 'pad':4})
 
-        # placing the canvas on the Tkinter self.__window
+        # platzieren der Ausgabefenster
         canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
         canvas.get_tk_widget().grid(column=1, row=1, columnspan=5, pady=5)
