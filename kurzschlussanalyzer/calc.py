@@ -11,13 +11,12 @@ def calculate(df):
     # suchen I_max
     colcurrent = df["I Strom [A]"]
     #global i_max
-    i_max = colcurrent.max()
+    i_max = df["I Strom [A]"].max()
     #global size_df 
     size_df = len(df)
     
     # abfragen der Zeit in Zeile 50 (Start Ereigniss)
     start_time = df.iloc[50]["Time [s]"]
-    print(start_time)
     # spannung vor der Belastung abfragen
     u_0 = df.iloc[25]["U Spannung [V]"]      
     
@@ -29,8 +28,9 @@ def calculate(df):
     if u_0 <= 1:
         voltage = u_l
     else: 
-        voltage = (u_0 - u_l)# Spannungsabfall über der FL und Gleis berechnen wenn neue Messmethode verwendet wird
-    
+        u_max = df["U Spannung [V]"].max()
+        voltage = (u_max - u_l)# Spannungsabfall über der FL und Gleis berechnen wenn neue Messmethode verwendet wird
+        print(voltage)
         
     # Berechne r_fl
     r_fl = (voltage / i_max)
@@ -44,22 +44,24 @@ def calculate(df):
             break  # Beende die Schleife, sobald 63% von I_max erreicht ist
 
     # Berechne l_fl
-    i_tau = colcurrent.max() * 0.63
-    l_fl = (-r_fl * tau) / np.log(1 - (i_tau / i_max))
+    i_1tau = colcurrent.max() * 0.63
+    l_fl = (-r_fl * tau) / np.log(1 - (i_1tau / i_max))
 
     
     # rückgabewerte
     return r_fl, l_fl, tau, size_df
 
 def real_current(size_df, l_fl, r_fl,df):
-    """"
+    
     u_max = df["U Spannung [V]"].max()
     i_real = u_max/r_fl
     data = {"Time [s]": np.arange(0, size_df * 0.00005, 0.00005)}
     #Dataframe zum realen kurzschluss erstellen
     df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
     df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
-    """
+    return df_real
+
+"""
     data = {"Time [s]": np.arange(0, len(df) * 0.00005, 0.00005)}
 
     # Dataframe zum realen kurzschluss erstellen
@@ -75,7 +77,7 @@ def real_current(size_df, l_fl, r_fl,df):
     print(df_real)
     return df_real
     
-""" 
+
 def safety_function(df_real):
     ddl_start =0
     ddl_stop = 0
@@ -85,9 +87,8 @@ def safety_function(df_real):
     ddl_start_row = df_real[df_real['Delta_I'] > 20].iloc[0]
 
     ddl_start = ddl_start_row['Time [s]']
-    return ddl_start, ddl_stop """
+    return ddl_start, ddl_stop 
 
-""""
 def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     # Berechnung des Stromanstiegs
     df_real['di/dt'] = df_real['I Strom [A]'].diff() / (df_real['Time [s]'].diff())

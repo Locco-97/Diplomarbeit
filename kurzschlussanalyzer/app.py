@@ -91,13 +91,10 @@ class App():
         #ddl_start, ddl_stop = safety_function(df_real, 6, 15, 1000, 20)
         ddl_start = 0.5
         ddl_stop = 1
-        print(ddl_start)
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         
         # Anzeigelinien in Plot
         points = {"Start": ddl_start, "Stop": ddl_stop, "xyz": 4.05}
-        print("test df real")
-        print(df_real)
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
 
        
@@ -170,9 +167,11 @@ class App():
             for i, row in df.iterrows():
                 current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
                 next_current_value = (df.iloc[i + 1]).iloc[1]  # Stromwert für die nächste Zeile
+                voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
+                next_voltage_value = (df.iloc[i + 1]).iloc[2]  # Spannungswert für die nächste Zeile
 
                 # Bedingungen überprüfen, um den Start zu markieren von der Messung
-                if (current_value + 3) <= next_current_value:
+                if (current_value + 2.5) <= next_current_value or (voltage_value - 2.5) >= next_voltage_value:
                     currentindex = i
                     startflag = True
 
@@ -184,7 +183,7 @@ class App():
                 # Wenn sowohl Start als auch Ende markiert wurden, die Schleife beenden
                 if endflag and startflag:
                    # Einen neuen DataFrame erstellen, der die relevanten Daten enthält
-                    self.df_measure = df.iloc[currentindex - 75 : endindex + 75]
+                    self.df_measure = df.iloc[currentindex - 50 : endindex + 50]
                     self.df_measure = self.df_measure.reset_index() 
                     break
 
