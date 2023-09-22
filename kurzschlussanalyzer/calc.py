@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 
 
-
-
 def calculate(df):
 
     # suchen I_max
@@ -60,34 +58,19 @@ def real_current(size_df, l_fl, r_fl,df):
     df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
     df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
     return df_real
-
-"""
-    data = {"Time [s]": np.arange(0, len(df) * 0.00005, 0.00005)}
-
-    # Dataframe zum realen kurzschluss erstellen
-    df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
-
-    # Füge die Werte von "U Spannung [V]" aus dem ursprünglichen df hinzu
-    df_real["U Spannung [V]"] = df["U Spannung [V]"].values
-
-    # Berechne "I Strom [A]" für jeden Zeitpunkt unter Verwendung der aktuellen Spannung
-    df_real["I Strom [A]"] = df_real.apply(lambda row: (row["U Spannung [V]"]/r_fl) * (1 - np.exp((-r_fl / l_fl) * row["Time [s]"])), axis=1)
-
-    print("test df 1")
-    print(df_real)
-    return df_real
     
-
+""""
 def safety_function(df_real):
     ddl_start =0
     ddl_stop = 0
     
     df_real['Delta_I'] = df_real['I Strom [A]'].diff()
-    # Den ersten Zeitpunkt finden, an dem der Unterschied größer als 0.25A ist
-    ddl_start_row = df_real[df_real['Delta_I'] > 20].iloc[0]
+    # Den ersten Zeitpunkt finden, an dem der Unterschied größer als 0.20A ist
+    ddl_start_row = df_real[df_real['Delta_I'] > 5].iloc[0]
 
     ddl_start = ddl_start_row['Time [s]']
     return ddl_start, ddl_stop 
+"""
 
 def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     # Berechnung des Stromanstiegs
@@ -96,32 +79,57 @@ def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
     # Finden des Startzeitpunkts der Analyse (wo di/dt > E)
     start_time = df_real[df_real['di/dt'] > E]['Time [s]'].iloc[0]
 
-    # Finden des Endzeitpunkts der Analyse (wo di/dt < F nach start_time)
-    #end_time = df_real[(df_real['di/dt'] < F) & (df_real['Time [s]'] > start_time)]['Time [s]'].iloc[0]
-
+    # Überwachungszeitraum festlegen
+    end_time = start_time + t_Delta_Imax
+    relevant_df = df_real[(df_real['Time [s]'] >= start_time) & (df_real['Time [s]'] <= end_time)]
+    
     # Überprüfen, ob Delta I den Wert Delta_Imax während der Analysezeit übersteigt
-    max_delta_I = df_real[(df_real['Time [s]'] >= start_time) & (df_real['Time [s]'] <= end_time)]['I Strom [A]'].diff().max()
+    max_delta_I = relevant_df['I Strom [A]'].diff().max()
 
     if max_delta_I > Delta_Imax:
-        trigger_time = df_real[df_real['I Strom [A]'].diff() == max_delta_I]['Time [s]'].iloc[0]
+        trigger_time = relevant_df[relevant_df['I Strom [A]'].diff() == max_delta_I]['Time [s]'].iloc[0]
+        
+        # 2. Überprüfen, ob die Steigung innerhalb des Zeitraums flacher wird als F
+        stop_time = relevant_df[relevant_df['di/dt'] < F]['Time [s]'].iloc[0] if any(relevant_df['di/dt'] < F) else None
 
-        # Überprüfen, ob der Stromwert nach der Verzögerung t_Delta_Imax immer noch über Delta_Imax liegt
-        time_after_delay = trigger_time + (t_Delta_Imax / 1000)  # Konvertierung von ms in s
-        current_after_delay = df_real[df_real['Time [s]'] == time_after_delay]['I Strom [A]'].iloc[0]
-
-        if current_after_delay - df_real[df_real['Time [s]'] == trigger_time]['I Strom [A]'].iloc[0] > Delta_Imax:
-            return trigger_time
+        if stop_time:
+            print("Analyse gestoppt bei Zeit:", stop_time)
         else:
-            return None
+            print("Auslösezeit (da die Steigung nicht flacher als F wurde):", end_time)
     else:
-        return None
+        # 3. Überprüfen, ob die Steigung innerhalb dieses Zeitraums flacher wird
+        stop_time = relevant_df[relevant_df['di/dt'] < E]['Time [s]'].iloc[0] if any(relevant_df['di/dt'] < E) else None
+
+        # 4. Überprüfen, ob der Stromanstieg länger dauert als t_Delta_Imax
+        activation_time_index = relevant_df[relevant_df['I Strom [A]'].diff() > Delta_Imax]['Time [s]'].index
+        if not activation_time_index.empty:
+            activation_time = relevant_df.loc[activation_time_index[0], 'Time [s]']
+            time_difference = activation_time - start_time
+
+            if time_difference > t_Delta_Imax:
+                print("Der Anstieg dauert länger als t_Delta_Imax!")
+        else:
+            activation_time = None
+
+        print("Start Time:", start_time)
+        print("Stop Time (falls flacher wird):", stop_time)
+        print("Auslösungszeit (falls stärkerer Anstieg):", activation_time)
+    
+    # Überprüfen, ob ddl_stop None ist und entsprechend den letzten Zeitwert von df_real setzen
+    ddl_stop = stop_time if stop_time != None else df_real['Time [s]'].iloc[-1]
+    
+    ddl_start = start_time
+           
+    return ddl_start, ddl_stop 
 
 
-    # Analyse des df_real DataFrames
-    result = safety_function(df_real, 1e3, 1e3, 1, 5)
-    if result:
-        print(f"Auslösung aktiviert bei {result} s")
-    else:
-        print("Keine Auslösung aktiviert.")
+"""
+
+        # Analyse des df_real DataFrames
+        result = safety_function(df_real, 1e3, 1e3, 1, 5)
+        if result:
+            print(f"Auslösung aktiviert bei {result} s")
+        else:
+            print("Keine Auslösung aktiviert.")
 
 """

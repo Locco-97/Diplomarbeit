@@ -7,11 +7,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import pandas as pd
 from kurzschlussanalyzer.calc import calculate 
 from kurzschlussanalyzer.calc import real_current
-#from kurzschlussanalyzer.calc import safety_function
+from kurzschlussanalyzer.calc import safety_function
 
 
-class App():
-    """simple App for user interaction"""
+class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
     def __del__(self):
         pass
@@ -88,9 +87,10 @@ class App():
         self.__get_measurement_data() #funktionsaufruf daten einlesen
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
-        #ddl_start, ddl_stop = safety_function(df_real, 6, 15, 1000, 20)
-        ddl_start = 0.5
-        ddl_stop = 1
+        print(df_real)
+        ddl_start, ddl_stop = safety_function(df_real, 5, 2, 1000, 0.001)
+        #ddl_start = 0.5
+        #ddl_stop = 1
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         
         # Anzeigelinien in Plot
