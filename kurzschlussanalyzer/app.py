@@ -84,7 +84,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
 
-        self.__get_measurement_data() #funktionsaufruf daten einlesen
+        self.__get_measurement_data() #funktionsaufruf daten einlesen, df generieren
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
         print(df_real)
@@ -108,11 +108,9 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         endflag = False   # Flag, um das Ende zu markieren
         startflag = False # Flag, um den Start zu markieren
 
-        # CSV-Datei in einen DataFrame einlesen
+        #ausgewählte CSV-Datei in DataFrame einlesen
         df = pd.read_csv(self.__filename, sep=",")
 
-        # Den DataFrame auf die relevanten Spalten reduzieren
-        #df = df[["Time [s]", "I Strom [A]", "U Spannung [V]"]]
         #Dataframe reduzieren auf relevante Spalten und überschrift vergeben
         df = df.iloc[:, [0, 5, 10]]
         df.columns = ["Time [s]", "I Strom [A]", "U Spannung [V]"]
