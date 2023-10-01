@@ -88,7 +88,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
         print(df_real)
-        ddl_start, ddl_stop = safety_function(df_real, 5, 2, 1000, 0.001)
+        ddl_start, ddl_stop = safety_function(df_real, 5, 5, 1000, 0.001)
         #ddl_start = 0.5
         #ddl_stop = 1
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
@@ -122,8 +122,6 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         else:
             Messverfahren = 0  # Merker Messverfahren 2
 
-   
-        
         # Die Strom-Spalte in einer separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
@@ -198,20 +196,20 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         plot2 = fig2.add_subplot(111)
         
         # --- Plot 1 ---
-        # plot style settings
+        # plot style einstellungen
         plot1.grid()
         plot1.set_title("Diagramm Kurzschluss")
-        plot1.set_xlabel("Time [s]")
+        plot1.set_xlabel("Zeit [s]")
         plot1.set_ylabel("Strom [A]", color="g")
         secay = plot1.secondary_yaxis("right")
         secay.set_ylabel("Spannung [U]", color="r")
 
-        # plot data input
+        # plot Data Messung
         plot1.plot(df_measure["Time [s]"], df_measure["U Spannung [V]"], color="r", label="Kurzschlussspanung")
         plot1.plot(df_measure["Time [s]"], df_measure["I Strom [A]"], color="g", label="Kurzschlusstrom")
 
         # --- Plot 2 ---
-        # plot style settings
+        # plot style einstellungen
         plot2.grid()
         plot2.set_title("Diagramm Berechung Kurzschluss")
         plot2.set_xlabel("Time [s]")
@@ -225,12 +223,12 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # Grenzen der x-Achse für plot2 festlegen
         plot2.set_xlim(x_min, x_max)
 
-        # plot data input
+        # plot data Dataframe df_real
         plot2.plot(df_real["Time [s]"], df_real["I Strom [A]"], color="g", label="Kurzschlusstrom")
 
-        # plot line input
+        # Linienbeschriftung
         yMin, yMax = plot2.get_ylim()
-        yMean = (yMax - yMin) * 0.75 # set text in the upper half of the line
+        yMean = (yMax - yMin) * 0.75 #Beschriftungsposition festlegen auf 75% höhe
 
         for text, pos in points.items():
             plot2.axvline(x=pos, linestyle="--")
