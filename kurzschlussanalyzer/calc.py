@@ -49,82 +49,88 @@ def calculate(df):
     # rückgabewerte
     return r_fl, l_fl, tau, size_df
 
-def real_current(size_df, l_fl, r_fl,df):
+
+def real_current(size_df, l_fl, r_fl, df):
     
+    # Maximale Spannung ermitteln
     u_max = df["U Spannung [V]"].max()
+    
+    # Wenn die maximale Spannung unter 500 ist, setzen wir u_max auf 600V (bei älterer Messmethode)
+    if u_max < 500:
+        u_max = 600
+    
+    # Realen Strom berechnen
     i_real = u_max/r_fl
-    data = {"Time [s]": np.arange(0, size_df * 0.00005, 0.00005)}
-    #Dataframe zum realen kurzschluss erstellen
+    
+    # Erstellen eines DataFrames für den realen Kurzschluss,
+    # bei dem die ersten 50 Zeitschritte negative Werte haben
+    data = {"Time [s]": np.arange(-0.0025, (size_df * 0.00005) - 0.0025, 0.00005)}
     df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
-    df_real["I Strom [A]"] = df_real["Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
+    
+    # Werte für die ersten 50 Zeilen explizit auf 0 setzen
+    df_real.loc[:49, ["I Strom [A]", "U Spannung [V]"]] = 0
+    
+    # Berechnen und Zuweisen der tatsächlichen Werte ab dem Index 50
+    df_real.loc[50:, "I Strom [A]"] = df_real.loc[50:, "Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
+    
+    # Berechnen der Zeitableitung des Stroms
+    df_real['di/dt'] = (df_real['I Strom [A]'].diff()) / (df_real['Time [s]'].diff())
+    
     return df_real
-    
 
-def safety_function(df_real, E, F, Delta_Imax, t_Delta_Imax):
+
+def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
     print("safety_function")
-    F = F/20 #Anpassen der A/ms auf die Messauflösung von 20kHz
-    E = E/20 #Anpassen der A/ms auf die Messauflösung von 20kHz
+
+    # F und E werden angepasst
+    sa_E = sa_E / 20 
+    sa_F = sa_F / 20 
+
+    df_real['di/dt'] = df_real['I Strom [A]'].diff().div(df_real['Time [s]'].diff()).fillna(0)
+
+    # Finden des Startzeitpunkts
+    start_time_indices = df_real[df_real['di/dt'] > sa_E].index
     
-    # Berechnung des Stromanstiegs
-    df_real['di/dt'] = df_real['I Strom [A]'].diff() / (df_real['Time [s]'].diff())
-
-    # Finden des Startzeitpunkts der Analyse (wo di/dt > E)
-    start_time = df_real[df_real['di/dt'] > E]['Time [s]'].iloc[0]
-
-    # Überwachungszeitraum festlegen und zu überwachendes df erstellen
-    end_time = start_time + t_Delta_Imax
-    relevant_df = df_real[(df_real['Time [s]'] >= start_time) & (df_real['Time [s]'] <= end_time)]
-    print(end_time)
-
-    # Kumulative Summe des Delta I berechnen und den ersten Zeitpunkt finden, 
-    # an dem diese Summe Delta_Imax übersteigt
-    delta_I = relevant_df['I Strom [A]'].diff()
-    sum_delta_I = delta_I.cumsum()
-    trigger_index = sum_delta_I[sum_delta_I > Delta_Imax].index
-    if not trigger_index.empty:
-        trigger_time = relevant_df.loc[trigger_index[0], 'Time [s]']
-        print("trigger_time", trigger_time)
-
-        # Überprüfen, ob die Steigung innerhalb des Zeitraums flacher wird als F
-        stop_time = relevant_df[relevant_df['di/dt'] < F]['Time [s]'].iloc[0] if any(relevant_df['di/dt'] < F) else None
-
-        if stop_time:
-            print("Analyse gestoppt bei Zeit:", stop_time)
-        else:
-            print("Auslösezeit (da die Steigung nicht flacher als F wurde):", end_time)
+    # Überprüfen, ob ein Startzeitpunkt existiert
+    if not start_time_indices.empty:
+        ddl_start_index = start_time_indices[0]
+        ddl_start_time = df_real.loc[ddl_start_index, 'Time [s]']
     else:
-        # 3. Überprüfen, ob die Steigung innerhalb dieses Zeitraums flacher wird
-        stop_time = relevant_df[relevant_df['di/dt'] < E]['Time [s]'].iloc[0] if any(relevant_df['di/dt'] < E) else None
+        print("Kein Startzeitpunkt gefunden.")
+        return None, None, None
 
-        # 4. Überprüfen, ob der Stromanstieg länger dauert als t_Delta_Imax
-        activation_time_index = relevant_df[relevant_df['I Strom [A]'].diff() > Delta_Imax]['Time [s]'].index
-        if not activation_time_index.empty:
-            activation_time = relevant_df.loc[activation_time_index[0], 'Time [s]']
-            time_difference = activation_time - start_time
+    # Relevanter Datenbereich
+    relevant_df = df_real[(df_real['Time [s]'] >= ddl_start_time) & (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
 
-            if time_difference > t_Delta_Imax:
-                print("Der Anstieg dauert länger als t_Delta_Imax!")
+    # Auslösezeit
+    if not relevant_df.empty:
+        delta_I = relevant_df['I Strom [A]'].diff().abs()
+        sum_delta_I = delta_I.cumsum()
+        trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index
+
+        if not trigger_index.empty:
+            t_Ausloesen = relevant_df.loc[trigger_index[0], 'Time [s]']
         else:
-            activation_time = None
+            t_Ausloesen = ddl_start_time + sa_t_Delta_Imax
+    else:
+        t_Ausloesen = None
 
-        print("Start Time:", start_time)
-        print("Stop Time (falls flacher wird):", stop_time)
-        print("Auslösungszeit (falls stärkerer Anstieg):", activation_time)
-    
-    # Überprüfen, ob ddl_stop None ist und entsprechend den letzten Zeitwert von df_real setzen
-    ddl_stop = stop_time if stop_time != None else df_real['Time [s]'].iloc[-1]
-    
-    ddl_start = start_time
+    print("Start Time:", ddl_start_time)
+    print("Stop Time (falls flacher wird):", ddl_start_time + sa_t_Delta_Imax)
+    print("Auslösungszeit (falls stärkerer Anstieg):", t_Ausloesen)
 
-    return ddl_start, ddl_stop
+    ddl_stop = ddl_start_time + sa_t_Delta_Imax
+    ddl_ausloesung = t_Ausloesen
+    return  ddl_start_time, ddl_stop, ddl_ausloesung
 
+
+
+
+
+
+
+ 
     
-    # Überprüfen, ob ddl_stop None ist und entsprechend den letzten Zeitwert von df_real setzen
-    ddl_stop = stop_time if stop_time != None else df_real['Time [s]'].iloc[-1]
-    
-    ddl_start = start_time
-           
-    return ddl_start, ddl_stop 
 
 
 """

@@ -41,22 +41,55 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.button_file_select.grid(row=3, column=0, columnspan=2)
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
         self.sep.grid(row=4, column=0,ipadx=70, pady=10, columnspan=2)
-        # Text und Eingabefelder erstellen
-        self.test = tk.Label(self.menu_left_upper, text="R\u1D65:", font=('Segoe UI', 10, 'normal'))
-        self.test.grid(row=5, column=0, sticky=tk.W)
-        self.entry_resistance = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_resistance.grid(row=5, column=1)
-        self.test = tk.Label(self.menu_left_upper, text="L\u1D65:", font=('Segoe UI', 10, 'normal'))
-        self.test.grid(row=6, column=0, sticky=tk.W)
-        self.entry_indutance = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_indutance.grid(row=6, column=1)
-        self.test = tk.Label(self.menu_left_upper, text="U\u2080:", font=('Segoe UI', 10, 'normal'))
-        self.test.grid(row=7, column=0, sticky=tk.W)
-        self.entry_voltage = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_voltage.grid(row=7, column=1)
 
-        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
-        self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
+        # Text und Eingabefelder erstellen
+        self.test = tk.Label(self.menu_left_upper, text="GR-Lastspannung: ", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=5, column=0, sticky=tk.W)
+        self.entry_lastspannung = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_lastspannung.grid(row=5, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="Leitungseinduktivität: ", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=6, column=0, sticky=tk.W)
+        self.entry_induktivitaet = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_induktivitaet.grid(row=6, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="Leitungswiderstand: ", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=7, column=0, sticky=tk.W)
+        self.entry_widerstand = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_widerstand.grid(row=7, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="SA, E: ", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=8, column=0, sticky=tk.W)
+        self.entry_sae = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_sae.grid(row=8, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="SA, F:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=9, column=0, sticky=tk.W)
+        self.entry_saf = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_saf.grid(row=9, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="SA, delta Imax:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=10, column=0, sticky=tk.W)
+        self.entry_deltaimax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_deltaimax.grid(row=10, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=11, column=0, sticky=tk.W)
+        self.entry_tdeltaimax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_tdeltaimax.grid(row=11, column=1)
+
+        self.test = tk.Label(self.menu_left_upper, text="SA, Tmax:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=12, column=0, sticky=tk.W)
+        self.entry_satmax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_satmax.grid(row=12, column=1)
+        
+        self.test = tk.Label(self.menu_left_upper, text="SA, Delta Imin:", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=13, column=0, sticky=tk.W)
+        self.entry_sadeltaimin = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_sadeltaimin.grid(row=13, column=1)
+
+        #self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        #self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
         
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
@@ -84,17 +117,22 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
 
+        sa_e = float(self.entry_sae.get())
+        sa_f = float(self.entry_saf.get())
+        sa_delta_imax = float(self.entry_deltaimax.get())
+        sa_t_delta_imax = float(self.entry_tdeltaimax.get())
+        sa_delta_imin = float(self.entry_sadeltaimin.get())
+        sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
         self.__get_measurement_data() #funktionsaufruf daten einlesen, df generieren
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
-        df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
+        df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # funktionsaufruf realer kurzschluss berechnen
         print(df_real)
-        ddl_start, ddl_stop = safety_function(df_real, 5, 5, 1000, 0.001)
-        #ddl_start = 0.5
-        #ddl_stop = 1
+        # funktionsaufruf schutzfunktionsanalyse
+        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, sa_e, sa_f, sa_delta_imax, sa_t_delta_imax, sa_tmax, sa_delta_imin)
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
         
         # Anzeigelinien in Plot
-        points = {"Start": ddl_start, "Stop": ddl_stop, "xyz": 4.05}
+        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
 
        
