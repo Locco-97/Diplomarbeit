@@ -47,54 +47,71 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=5, column=0, sticky=tk.W)
         self.entry_lastspannung = tk.Entry(self.menu_left_upper, width=10)
         self.entry_lastspannung.grid(row=5, column=1)
+        self.entry_lastspannung.insert(0, "630")
 
         self.test = tk.Label(self.menu_left_upper, text="Leitungseinduktivität: ", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=6, column=0, sticky=tk.W)
         self.entry_induktivitaet = tk.Entry(self.menu_left_upper, width=10)
         self.entry_induktivitaet.grid(row=6, column=1)
+        self.entry_induktivitaet.insert(0,"0.005")
 
         self.test = tk.Label(self.menu_left_upper, text="Leitungswiderstand: ", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=7, column=0, sticky=tk.W)
         self.entry_widerstand = tk.Entry(self.menu_left_upper, width=10)
         self.entry_widerstand.grid(row=7, column=1)
+        self.entry_widerstand.insert(0,"0.25")
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, E: ", font=('Segoe UI', 10, 'normal'))
-        self.test.grid(row=8, column=0, sticky=tk.W)
-        self.entry_sae = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_sae.grid(row=8, column=1)
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, F:", font=('Segoe UI', 10, 'normal'))
+        self.test = tk.Label(self.menu_left_upper, text="SA, E: [A/ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=9, column=0, sticky=tk.W)
-        self.entry_saf = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_saf.grid(row=9, column=1)
+        self.entry_sae = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_sae.grid(row=9, column=1)
+        self.entry_sae.insert(0,"20")
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, delta Imax:", font=('Segoe UI', 10, 'normal'))
+        self.test = tk.Label(self.menu_left_upper, text="SA, F: [A/ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=10, column=0, sticky=tk.W)
-        self.entry_deltaimax = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_deltaimax.grid(row=10, column=1)
+        self.entry_saf = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_saf.grid(row=10, column=1)
+        self.entry_saf.insert(0,"15")
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax:", font=('Segoe UI', 10, 'normal'))
+        self.test = tk.Label(self.menu_left_upper, text="SA, delta Imax: [A]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=11, column=0, sticky=tk.W)
-        self.entry_tdeltaimax = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_tdeltaimax.grid(row=11, column=1)
+        self.entry_deltaimax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_deltaimax.grid(row=11, column=1)
+        self.entry_deltaimax.insert(0,"1997")
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, Tmax:", font=('Segoe UI', 10, 'normal'))
+        self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax: [s]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=12, column=0, sticky=tk.W)
-        self.entry_satmax = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_satmax.grid(row=12, column=1)
-        
-        self.test = tk.Label(self.menu_left_upper, text="SA, Delta Imin:", font=('Segoe UI', 10, 'normal'))
-        self.test.grid(row=13, column=0, sticky=tk.W)
-        self.entry_sadeltaimin = tk.Entry(self.menu_left_upper, width=10)
-        self.entry_sadeltaimin.grid(row=13, column=1)
+        self.entry_tdeltaimax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_tdeltaimax.grid(row=12, column=1)
+        self.entry_tdeltaimax.insert(0,"0.01997")
 
-        #self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
-        #self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
+        self.test = tk.Label(self.menu_left_upper, text="SA, Tmax: [ms]", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=13, column=0, sticky=tk.W)
+        self.entry_satmax = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_satmax.grid(row=13, column=1)
+        self.entry_satmax.insert(0,"25")
+        
+        self.test = tk.Label(self.menu_left_upper, text="SA, Delta Imin: [A]", font=('Segoe UI', 10, 'normal'))
+        self.test.grid(row=14, column=0, sticky=tk.W)
+        self.entry_sadeltaimin = tk.Entry(self.menu_left_upper, width=10)
+        self.entry_sadeltaimin.grid(row=14, column=1)
+        self.entry_sadeltaimin.insert(0,"900")
+
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=15, column=0,ipadx=70, pady=10, columnspan=2)
         
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
+        
+        self.button_update = tk.Button(self.menu_left_upper, text="Update", command=self.__update_calc)
+        self.button_update.grid(row=16, column=0, columnspan=2)
 
-
+        self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
+        self.sep.grid(row=17, column=0,ipadx=70, pady=10, columnspan=2)
+        
         # status bar 
         self.status_frame = tk.Frame(self.root)
         self.status = tk.Label(self.status_frame, text="Programmstatus Anzeige")
@@ -275,3 +292,24 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # platzieren der Ausgabefenster
         canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
         canvas.get_tk_widget().grid(column=1, row=1, columnspan=5, pady=5)
+        
+    def __update_calc(self) -> None:
+        # Updaten der Schutzanalyse
+        sa_e = float(self.entry_sae.get())
+        sa_f = float(self.entry_saf.get())
+        sa_delta_imax = float(self.entry_deltaimax.get())
+        sa_t_delta_imax = float(self.entry_tdeltaimax.get())
+        sa_delta_imin = float(self.entry_sadeltaimin.get())
+        sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
+
+        # neuaufruf 
+        self.__get_measurement_data()  # Funktionsaufruf daten einlesen, df generieren
+        r_fl, l_fl, tau, size_df = calculate(self.df_measure) # Funktionsaufruf berechnungen
+        df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
+        
+        # Funktionsaufruf schutzfunktionsanalyse
+        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, sa_e, sa_f, sa_delta_imax, sa_t_delta_imax, sa_tmax, sa_delta_imin)
+
+        # Update plot
+        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}
+        self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)

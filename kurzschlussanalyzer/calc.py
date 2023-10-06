@@ -74,23 +74,25 @@ def real_current(size_df, l_fl, r_fl, df):
     df_real.loc[50:, "I Strom [A]"] = df_real.loc[50:, "Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
     
     # Berechnen der Zeitableitung des Stroms
-    df_real['di/dt'] = (df_real['I Strom [A]'].diff()) / (df_real['Time [s]'].diff())
+    df_real['Delta_I'] = df_real['I Strom [A]'].diff().fillna(0)
     
     return df_real
 
 
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
-    print("safety_function")
 
-    # F und E werden angepasst
-    sa_E = sa_E / 20 
-    sa_F = sa_F / 20 
+    extracted_rows = df_real.iloc[45:61]
+    # Gib die extrahierten Zeilen im Terminal aus
+    print(extracted_rows)
+    
+    # F und E werden angepasst an die Messauflösung von 20kHz
+    sa_E = (sa_E / 20)
+    sa_F = (sa_F / 20)
 
-    df_real['di/dt'] = df_real['I Strom [A]'].diff().div(df_real['Time [s]'].diff()).fillna(0)
 
     # Finden des Startzeitpunkts
-    start_time_indices = df_real[df_real['di/dt'] > sa_E].index
-    
+    start_time_indices = df_real[df_real['Delta_I'] >= sa_E].index
+
     # Überprüfen, ob ein Startzeitpunkt existiert
     if not start_time_indices.empty:
         ddl_start_index = start_time_indices[0]
@@ -100,9 +102,11 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         return None, None, None
 
     # Relevanter Datenbereich
-    relevant_df = df_real[(df_real['Time [s]'] >= ddl_start_time) & (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
+    relevant_df = df_real[(df_real['Time [s]'] >= ddl_start_time) &
+                          (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
 
     # Auslösezeit
+    t_Ausloesen = ddl_start_time + sa_t_Delta_Imax  # Setze Standardwert für den Fall, dass die if-Bedingung nicht erfüllt ist
     if not relevant_df.empty:
         delta_I = relevant_df['I Strom [A]'].diff().abs()
         sum_delta_I = delta_I.cumsum()
@@ -110,18 +114,21 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
 
         if not trigger_index.empty:
             t_Ausloesen = relevant_df.loc[trigger_index[0], 'Time [s]']
-        else:
-            t_Ausloesen = ddl_start_time + sa_t_Delta_Imax
-    else:
-        t_Ausloesen = None
 
+    # Ausgabe der Ergebnisse
     print("Start Time:", ddl_start_time)
     print("Stop Time (falls flacher wird):", ddl_start_time + sa_t_Delta_Imax)
     print("Auslösungszeit (falls stärkerer Anstieg):", t_Ausloesen)
 
-    ddl_stop = ddl_start_time + sa_t_Delta_Imax
-    ddl_ausloesung = t_Ausloesen
-    return  ddl_start_time, ddl_stop, ddl_ausloesung
+    # Tmax-Schutz
+    if ddl_start_time is not None:
+        t_max = ddl_start_time + sa_Tmax
+        if t_max < relevant_df['Time [s]'].max():
+            print("Tmax-Schutz ausgelöst.")
+
+    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_Ausloesen
+
+
 
 
 
