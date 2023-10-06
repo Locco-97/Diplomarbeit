@@ -114,7 +114,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         
         # status bar 
         self.status_frame = tk.Frame(self.root)
-        self.status = tk.Label(self.status_frame, text="Programmstatus Anzeige")
+        self.status = tk.Label(self.status_frame, text="Statusanzeige")
         self.status.pack(fill="both", expand=True)
 
         self.menu_left.grid(row=0, column=0, rowspan=4, sticky="nsew")
@@ -129,33 +129,46 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
     def run(self) -> None:
         self.root.mainloop()
     def __browse_files(self) -> None:
+        self.__update_status("Datei auswählen...")
         self.__filename = filedialog.askopenfilename(
             title="Select a File",
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
 
-        sa_e = float(self.entry_sae.get())
-        sa_f = float(self.entry_saf.get())
-        sa_delta_imax = float(self.entry_deltaimax.get())
-        sa_t_delta_imax = float(self.entry_tdeltaimax.get())
-        sa_delta_imin = float(self.entry_sadeltaimin.get())
-        sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
-        self.__get_measurement_data() #funktionsaufruf daten einlesen, df generieren
-        r_fl, l_fl, tau, size_df = calculate(self.df_measure) # funktionsaufruf berechnungen
-        df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # funktionsaufruf realer kurzschluss berechnen
-        print(df_real)
+        self.__get_measurement_data()  # funktionsaufruf daten einlesen, df generieren
+
+        self.__read_entrydata()
+
+        # funktionsaufruf berechnungen
+        r_fl, l_fl, tau, size_df = calculate(self.df_measure)
+
+        # funktionsaufruf realer kurzschluss berechnen
+        df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
+
         # funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, sa_e, sa_f, sa_delta_imax, sa_t_delta_imax, sa_tmax, sa_delta_imin)
+        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
-        
+
         # Anzeigelinien in Plot
         points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
 
-       
+    def __read_entrydata (self) -> None:
+        self.sa_e = float(self.entry_sae.get())
+        self.sa_f = float(self.entry_saf.get())
+        self.sa_delta_imax = float(self.entry_deltaimax.get())
+        self.sa_t_delta_imax = float(self.entry_tdeltaimax.get())
+        self.sa_delta_imin = float(self.entry_sadeltaimin.get())
+        self.sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
+    
+    def __update_status(self, new_status: str) -> None:
+        self.status.config(text=new_status)
+        self.root.update()    
      
 
     def __get_measurement_data(self) -> None:
+        self.__update_status("Messdaten analysieren...")
         # Initialisieren von Variablen und Flags
         voltageindex = 0  # Index für Spannung
         currentindex = 0  # Index für Strom
@@ -240,7 +253,8 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
     def __create_plot(self, points, df_measure, df_real=pd.DataFrame) -> None:
 
-        figure_size = (10, 5)
+
+        figure_size = (10, 4)
         dpi_scale = 100
 
         fig1 = Figure(figsize=figure_size, dpi=dpi_scale)
@@ -293,14 +307,10 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
         canvas.get_tk_widget().grid(column=1, row=1, columnspan=5, pady=5)
         
+        self.__update_status("Entwickelt von Matthias Thoma")
+        
     def __update_calc(self) -> None:
-        # Updaten der Schutzanalyse
-        sa_e = float(self.entry_sae.get())
-        sa_f = float(self.entry_saf.get())
-        sa_delta_imax = float(self.entry_deltaimax.get())
-        sa_t_delta_imax = float(self.entry_tdeltaimax.get())
-        sa_delta_imin = float(self.entry_sadeltaimin.get())
-        sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
+        self.__read_entrydata()
 
         # neuaufruf 
         self.__get_measurement_data()  # Funktionsaufruf daten einlesen, df generieren
@@ -308,7 +318,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
         
         # Funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, sa_e, sa_f, sa_delta_imax, sa_t_delta_imax, sa_tmax, sa_delta_imin)
+        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
 
         # Update plot
         points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}

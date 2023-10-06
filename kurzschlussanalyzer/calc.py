@@ -82,7 +82,7 @@ def real_current(size_df, l_fl, r_fl, df):
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
 
     extracted_rows = df_real.iloc[45:61]
-    # Gib die extrahierten Zeilen im Terminal aus
+    # Gib die ausgewählten Zeilen im Terminal aus (Start Kurzschluss)
     print(extracted_rows)
     
     # F und E werden angepasst an die Messauflösung von 20kHz
@@ -90,7 +90,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     sa_F = (sa_F / 20)
 
 
-    # Finden des Startzeitpunkts
+    # Finden des Startzeitpunkts der Analyse
     start_time_indices = df_real[df_real['Delta_I'] >= sa_E].index
 
     # Überprüfen, ob ein Startzeitpunkt existiert
