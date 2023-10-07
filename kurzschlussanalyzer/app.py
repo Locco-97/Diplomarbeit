@@ -126,6 +126,10 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # mainloop
         self.root.mainloop()
 
+    def __update_status(self, new_status: str) -> None:
+        self.status.config(text=new_status)
+        self.root.update() 
+    
     def run(self) -> None:
         self.root.mainloop()
     def __browse_files(self) -> None:
@@ -146,12 +150,12 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
 
         # funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+        ddl_start, ddl_stop, ddl_trigger = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
 
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
 
         # Anzeigelinien in Plot
-        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}
+        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_trigger}
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
 
     def __read_entrydata (self) -> None:
@@ -318,8 +322,8 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
         
         # Funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_ausloesung = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+        ddl_start, ddl_stop, ddl_trigger = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
 
         # Update plot
-        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_ausloesung}
+        points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_trigger}
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)

@@ -6,11 +6,11 @@ import pandas as pd
 
 def calculate(df):
 
-    # suchen I_max
+    # eigene Datenreihe mit den Stromwerten erstellen
     colcurrent = df["I Strom [A]"]
-    #global i_max
+    #grösster Stromwert im df suchen und in die variable kopieren
     i_max = df["I Strom [A]"].max()
-    #global size_df 
+    #grösse vom df auslesen und in variable schreiben
     size_df = len(df)
     
     # abfragen der Zeit in Zeile 50 (Start Ereigniss)
@@ -106,19 +106,19 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
                           (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
 
     # Auslösezeit
-    t_Ausloesen = ddl_start_time + sa_t_Delta_Imax  # Setze Standardwert für den Fall, dass die if-Bedingung nicht erfüllt ist
+    t_trigger = ddl_start_time + sa_t_Delta_Imax  # Setze Standardwert für den Fall, dass die if-Bedingung nicht erfüllt ist
     if not relevant_df.empty:
         delta_I = relevant_df['I Strom [A]'].diff().abs()
         sum_delta_I = delta_I.cumsum()
         trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index
 
         if not trigger_index.empty:
-            t_Ausloesen = relevant_df.loc[trigger_index[0], 'Time [s]']
+            t_trigger = relevant_df.loc[trigger_index[0], 'Time [s]']
 
     # Ausgabe der Ergebnisse
     print("Start Time:", ddl_start_time)
     print("Stop Time (falls flacher wird):", ddl_start_time + sa_t_Delta_Imax)
-    print("Auslösungszeit (falls stärkerer Anstieg):", t_Ausloesen)
+    print("Auslösungszeit (falls stärkerer Anstieg):", t_trigger)
 
     # Tmax-Schutz
     if ddl_start_time is not None:
@@ -126,7 +126,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         if t_max < relevant_df['Time [s]'].max():
             print("Tmax-Schutz ausgelöst.")
 
-    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_Ausloesen
+    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_trigger
 
 
 
