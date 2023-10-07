@@ -80,15 +80,15 @@ def real_current(size_df, l_fl, r_fl, df):
 
 
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
-
+    #trigger standardmässig auf keine auslösung setzten
+    trigger_type = 0
     extracted_rows = df_real.iloc[45:61]
-    # Gib die ausgewählten Zeilen im Terminal aus (Start Kurzschluss)
+    # Gib die ausgewählten Zeilen im Terminal aus (Start des Kurzschluss)
     print(extracted_rows)
     
-    # F und E werden angepasst an die Messauflösung von 20kHz
-    sa_E = (sa_E / 20)
-    sa_F = (sa_F / 20)
-
+    # F und E werden angepasst an die Messauflösung von 20kHz, Eingabe sa_E & sa_F erfolgt in A/ms (*1000 --> pro Sekunde/ 20000 --> 20kHz im df)
+    sa_E = ((sa_E*1000) / 20000)
+    sa_F = ((sa_F*1000) / 20000)
 
     # Finden des Startzeitpunkts der Analyse
     start_time_indices = df_real[df_real['Delta_I'] >= sa_E].index
@@ -98,10 +98,9 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         ddl_start_index = start_time_indices[0]
         ddl_start_time = df_real.loc[ddl_start_index, 'Time [s]']
     else:
-        print("Kein Startzeitpunkt gefunden.")
-        return None, None, None
+        trigger_type = 0
 
-    # Relevanter Datenbereich
+    # Relevanter Datenbereich der Analyse
     relevant_df = df_real[(df_real['Time [s]'] >= ddl_start_time) &
                           (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
 
@@ -115,18 +114,27 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         if not trigger_index.empty:
             t_trigger = relevant_df.loc[trigger_index[0], 'Time [s]']
 
-    # Ausgabe der Ergebnisse
-    print("Start Time:", ddl_start_time)
-    print("Stop Time (falls flacher wird):", ddl_start_time + sa_t_Delta_Imax)
-    print("Auslösungszeit (falls stärkerer Anstieg):", t_trigger)
-
     # Tmax-Schutz
     if ddl_start_time is not None:
         t_max = ddl_start_time + sa_Tmax
         if t_max < relevant_df['Time [s]'].max():
             print("Tmax-Schutz ausgelöst.")
 
-    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_trigger
+    # Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
+    if not relevant_df.empty:
+        delta_Imin_index = sum_delta_I[sum_delta_I < sa_Delta_imin].index
+        if not delta_Imin_index.empty:
+            print("Delta Imin-Schutz ausgelöst.")
+        else:
+            t_ddl_delta_t = relevant_df['Time [s]'].max()
+            delta_t_condition = t_ddl_delta_t - ddl_start_time
+            if delta_t_condition > sa_Tmax:
+                print("DDL+ Delta T-Schutz ausgelöst.")
+
+    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_trigger, trigger_type
+
+# Weitere Ergänzungen basierend auf Ihren spezifischen Anforderungen
+
 
 
 

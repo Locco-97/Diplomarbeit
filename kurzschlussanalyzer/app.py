@@ -141,17 +141,29 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
         self.__get_measurement_data()  # funktionsaufruf daten einlesen, df generieren
 
-        self.__read_entrydata()
-
         # funktionsaufruf berechnungen
         r_fl, l_fl, tau, size_df = calculate(self.df_measure)
+       
+        #rundet die Werte auf 6 nachkommastellen
+        r_fl = round(r_fl, 6)
+        l_fl = round(l_fl, 6)
+        
+        # Schreiben der berechneten Werte in die Eingabefelder
+        self.entry_induktivitaet.delete(0, tk.END)  # löscht den aktuellen Inhalt des Eingabefelds
+        self.entry_induktivitaet.insert(0, str(l_fl))  # Schreibt den Wert von l_fl in das Eingabefeld 'induktivitaet'
 
+        self.entry_widerstand.delete(0, tk.END)  # löscht den aktuellen Inhalt des Eingabefelds
+        self.entry_widerstand.insert(0, str(r_fl))  # schreibt den Wert von r_fl in das Eingabefeld 'widerstand'
+
+        self.__read_entrydata()
         # funktionsaufruf realer kurzschluss berechnen
         df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
 
+        
         # funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_trigger = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
-
+        ddl_start, ddl_stop, ddl_trigger, trigger_type = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+        self.__update_status_from_trigger_type(trigger_type)
+        
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
 
         # Anzeigelinien in Plot
@@ -165,6 +177,8 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.sa_t_delta_imax = float(self.entry_tdeltaimax.get())
         self.sa_delta_imin = float(self.entry_sadeltaimin.get())
         self.sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
+        self.l_fl = float(self.entry_induktivitaet.get())
+        self.r_fl = float(self.entry_widerstand.get())
     
     def __update_status(self, new_status: str) -> None:
         self.status.config(text=new_status)
@@ -311,19 +325,32 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
         canvas.get_tk_widget().grid(column=1, row=1, columnspan=5, pady=5)
         
-        self.__update_status("Entwickelt von Matthias Thoma")
+        #self.__update_status("Entwickelt von Matthias Thoma")
         
     def __update_calc(self) -> None:
-        self.__read_entrydata()
-
         # neuaufruf 
-        self.__get_measurement_data()  # Funktionsaufruf daten einlesen, df generieren
+        #self.__get_measurement_data()  # Funktionsaufruf daten einlesen, df generieren
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # Funktionsaufruf berechnungen
-        df_real = real_current(size_df, l_fl, r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
+        
+        self.__read_entrydata()
+        df_real = real_current(size_df, self.l_fl, self.r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
         
         # Funktionsaufruf schutzfunktionsanalyse
-        ddl_start, ddl_stop, ddl_trigger = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
-
+        ddl_start, ddl_stop, ddl_trigger, trigger_type = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+        self.__update_status_from_trigger_type(trigger_type)
+        
         # Update plot
         points = {"Start": ddl_start, "Stop": ddl_stop, "Auslösung": ddl_trigger}
         self.__create_plot(df_measure=self.df_measure, df_real=df_real, points=points)
+        
+    def __update_status_from_trigger_type(self, trigger_type):
+        if trigger_type == 1:
+            self.__update_status("Auslösung durch DDL + Delta I")
+        if trigger_type == 2:
+            self.__update_status("Auslösung durch DDL + Delta T")
+        if trigger_type == 3:
+            self.__update_status("Auslösung durch Tmax-Schutz")
+        if trigger_type == 0:
+            self.__update_status("Feeder wird nicht ausgelöst")
+        else:
+            self.__update_status("Unbekannter Auslösungstyp")
