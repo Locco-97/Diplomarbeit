@@ -73,83 +73,109 @@ def real_current(size_df, l_fl, r_fl, df):
     # Berechnen und Zuweisen der tatsächlichen Werte ab dem Index 50
     df_real.loc[50:, "I Strom [A]"] = df_real.loc[50:, "Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
     
-    # Berechnen der Zeitableitung des Stroms
-    df_real['Delta_I'] = df_real['I Strom [A]'].diff().fillna(0)
+    # Berechnen des Stromanstieg gegenüber vorgänigem Messwert
+    #df_real['Delta_I'] = df_real['I Strom [A]'].diff().fillna(0)
     
     return df_real
 
 
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
-    # Trigger standardmäßig auf keine Ausloesung setzen
+    # Trigger standardmäßig auf keine Auslösung setzen
     trigger_type = 0
+    ddl_start_time = None
+    t_trigger = None
+    trigger_index = None
     
     # F und E werden angepasst an die Messaufloesung von 20kHz, Eingabe sa_E & sa_F erfolgt in A/ms (*1000 --> pro Sekunde/ 20000 --> 20kHz im df)
     sa_E = ((sa_E*1000) / 20000)
     sa_F = ((sa_F*1000) / 20000)
 
-    # Finden des Startzeitpunkts der Analyse, wo der Anstieg steiler als E ist
-    start_time_indices = df_real[df_real['Delta_I'] >= sa_E].index
+    df_real["delta I"] = df_real["I Strom [A]"].diff()  # Erstellt Datenreihe mit Differenz zum jeweils vorherigen Wert
+   
+    ddl_start_time = None
+    start_flag = False
 
-    # Überprüfen, ob ein Startzeitpunkt existiert
-    if not start_time_indices.empty:
-        ddl_start_index = start_time_indices[0]
-        ddl_start_time = df_real.loc[ddl_start_index, 'Time [s]']
-    else:
+    for index, row in df_real.iterrows():
+        if row["delta I"] >= sa_E:
+            ddl_start_time = row["Time [s]"]
+            start_flag = True
+            ddl_max_time = ddl_start_time + sa_t_Delta_Imax
+            print("analyse gestartet")
+            break
+    
+    
+    if not start_flag:
         trigger_type = 0
         ddl_start_time = None
-
-    # Ausloesezeit
-    t_trigger = None  # Setze den Standardwert auf None, falls keine Ausloesung erfolgt
-
-    delta_I = df_real['I Strom [A]'].diff().abs() #erstellt datenreihe mit differenz zum jeweils vorgängigen wert
-    sum_delta_I = delta_I.cumsum()  # erstellt datenreihe mit summe zum jeweils fortlaufenden wert im df
-    trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index #gibt die zeilennummer zurück in welcher zeile die summe groesser als das delta_imax ist
+        ddl_stop_time = None
+        t_trigger = None
+        print("analyse nicht gestartet")
+        return ddl_start_time, ddl_stop_time, t_trigger, trigger_type
     
-    # Überprüft, ob es zur Ausloesung kommt, und speichert die Zeit (durch den trigger_index) in die t_trigger-Variable
-    trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index
-    if not trigger_index.empty:
-        # Überprüfen, ob der Anstieg immer noch steiler als sa_F ist
-        if delta_I.loc[trigger_index[0]] >= sa_F:
-            t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
-            trigger_type = 1 #status setzten auf delta i max ausloesung
-        else:
-            # Der Anstieg ist nicht steil genug delta_imax loest nicht aus! status setzten
-            trigger_type = 0
-
-    #Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
-    if ddl_start_time is not None:
-        t_max = ddl_start_time + sa_Tmax
-        trigger_index = df_real[df_real['Time [s]'] == t_max].index
-        # Überprüfung, ob die Steigung nach t_max immer noch größer oder gleich sa_F ist
-        if delta_I.loc[trigger_index[0]] >= sa_F:
-            if df_real.loc[trigger_index[0], 'Time [s]'] < trigger_time: #überprüfen ob dieser schutz zuerst ausloest
-                t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
-                trigger_type = 2 #status setzten auf Tmax ausloesung
-        else:
-            # es kommt zu keiner ausloesung
-            trigger_type = 0  # Setz den status auf keine ausloesung
-
-
-        if trigger_time is not None:
-        # Finden des Index für die trigger_time
-            trigger_index = df_real[df_real['Time [s]'] == trigger_time].index
+    print(df_real)
     
-        # Überprüfen, ob der Stromwert zum Zeitpunkt der trigger_time größer als sa_Delta_imin ist
-        if not df_real.loc[trigger_index[0], 'I Strom [A]'] > sa_Delta_imin:
-        # Stromwert nicht ist größer als sa_Delta_imin, es passiert nichts
-            trigger_type = 0
-            trigger_time = None
+    # Erstellt eine leere Spalte "sum delta I"
+    df_real["sum delta I"] = 0.0
+    
+    # Beginnt ab dem Startwert und kumuliert die Summe der Differenzen
+    cum_sum_started = False
+    cum_sum = 0
+    for index, row in df_real.iterrows():
+        if not cum_sum_started and row["delta I"] >= sa_E:
+            cum_sum_started = True
+        if cum_sum_started:
+            cum_sum = cum_sum + row["delta I"]
+        df_real.at[index, "sum delta I"] = cum_sum
+    print(df_real)
+    
+    trigger_time = df_real.loc[df_real["sum delta I"] > sa_Delta_Imax, "Time [s]"].min()
+    #wenn ein wert gefunden wurde
+    if trigger_time is not None:
+        print("I max Ueberschritten")
+        #verzoegerung zeit bilden
+        trigger_time = trigger_time + sa_t_Delta_Imax
         
+        #gibt den am nächsten liegenden wert nach der verzoegerung der delta I summe zurück
+        nearest_sum_delta_I = df_real.loc[df_real["Time [s]"].sub(trigger_time).abs().idxmin(), "sum delta I"] 
+        #ueberpruefen ob delta I noch immer groesser delta I max ist
+        if nearest_sum_delta_I >= sa_Delta_Imax:
+            # Die Bedingung ist nach der Verzögerung immer noch erfüllt
+            t_trigger = trigger_time  # Zeitpunkt nach der Verzögerung
+            trigger_type = 1  # Setze trigger_type auf 1
+            print("trigger type 1", trigger_type)
+
+    # Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
+    t_max = ddl_start_time + sa_Tmax
+    trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
+    delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
+
+    # Überprüfung, ob die Steigung nach t_max immer noch größer oder gleich sa_F ist
+    if delta_I_delayed >= sa_F:
+        if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
+            t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
+            trigger_type = 2  # Status setzen auf Tmax Auslösung
 
     # Berechnung der Stopzeit, falls die Analyse gestoppt wird
-    for idx, row in df_real.iterrows():
-        if row['Time [s]'] >= ddl_start_time:
-            if row['Delta_I'] < sa_F:
-                ddl_stop_time = row['Time [s]']
-                trigger_type = 0
-                break
+    if ddl_start_time is not None:
+        for idx, row in df_real.iterrows():
+            if row['Time [s]'] >= ddl_start_time and row['Time [s]'] <= ddl_max_time:
+                if row['delta I'] < sa_F:
+                    ddl_stop_time = row['Time [s]']
+                    trigger_type = 4
+                    t_trigger = None
+                    break
+            else:
+                ddl_stop_time = None
+                
+    #Stromwert zum Zeitpunkt der ausloesung abfragen:
+    live_current = df_real.loc[df_real["Time [s]"].sub(t_trigger).abs().idxmin(), "I Strom [A]"]
+    if not live_current > sa_Delta_imin:
+        trigger_type = 5
+        t_trigger = None
+
 
     return ddl_start_time, ddl_stop_time, t_trigger, trigger_type
+
 
 
 

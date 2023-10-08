@@ -162,6 +162,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         
         # funktionsaufruf schutzfunktionsanalyse
         ddl_start, ddl_stop, ddl_trigger, trigger_type = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
+        print(trigger_type)
         self.__update_status_from_trigger_type(trigger_type)
         
         print(f"Widerstand (r_fl): {r_fl} Ohm, Induktivität (l_fl): {l_fl} H, Tau: {tau} s")
@@ -350,11 +351,23 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
     def __update_status_from_trigger_type(self, trigger_type):
         if trigger_type == 1:
             self.__update_status("Auslösung durch DDL + Delta I")
-        if trigger_type == 2:
+            print("status 1", self.__update_status)
+        elif trigger_type == 2:
             self.__update_status("Auslösung durch DDL + Delta T")
-        if trigger_type == 3:
+            print("status 2", self.__update_status)
+        elif trigger_type == 3:
             self.__update_status("Auslösung durch Tmax-Schutz")
-        if trigger_type == 0:
-            self.__update_status("Feeder wird nicht ausgelöst")
+            print("status 3", self.__update_status)
+        elif trigger_type == 4:
+            self.__update_status("keine Auslösung, Anstieg < F")
+            print("status 4", self.__update_status)
+        elif trigger_type == 5:
+            self.__update_status("keine Auslösung, I < Imin")
+            print("status 35", self.__update_status)
+        elif trigger_type == 0:
+            self.__update_status("Analyse nicht gestartet")
+            print("status 0", self.__update_status)
         else:
-            self.__update_status("Unbekannter Auslösungstyp")
+            self.__update_status("Unbekannter Status, support by +41 78 854 30 59")
+            print("status x", self.__update_status)
+
