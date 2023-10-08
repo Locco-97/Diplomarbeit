@@ -50,17 +50,19 @@ def calculate(df):
     return r_fl, l_fl, tau, size_df
 
 
-def real_current(size_df, l_fl, r_fl, df):
-    
+def real_current(size_df, l_fl, r_fl, df, u_last):
     # Maximale Spannung ermitteln
     u_max = df["U Spannung [V]"].max()
     
-    # Wenn die maximale Spannung unter 500 ist, setzen wir u_max auf 600V (bei älterer Messmethode)
-    if u_max < 500:
-        u_max = 600
+    # Wenn die maximale Spannung unter 100 ist, setzen wir u_last auf den manuell eingegebenen Wert (für Messmethode Variante 1)
+    if u_max < 100:
+        u_max = u_last
     
     # Realen Strom berechnen
-    i_real = u_max/r_fl
+    i_real = u_max / r_fl
+    
+    # df erweitern für den Fall, dass die manuelle Eingabe verwendet wird... Wenn keine Messung existiert
+    size_df = size_df * 1.1
     
     # Erstellen eines DataFrames für den realen Kurzschluss,
     # bei dem die ersten 50 Zeitschritte negative Werte haben
@@ -72,9 +74,11 @@ def real_current(size_df, l_fl, r_fl, df):
     
     # Berechnen und Zuweisen der tatsächlichen Werte ab dem Index 50
     df_real.loc[50:, "I Strom [A]"] = df_real.loc[50:, "Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
-    
-    # Berechnen des Stromanstieg gegenüber vorgänigem Messwert
-    #df_real['Delta_I'] = df_real['I Strom [A]'].diff().fillna(0)
+
+    # Finden Sie den Index, an dem "I Strom [A]" 99% erreicht
+    idx_99_percent = (df_real["I Strom [A]"] >= 0.9999 * df_real["I Strom [A]"].max()).idxmax()
+    # Kürzen Sie das DataFrame ab diesem Index
+    df_real = df_real.loc[:idx_99_percent].copy()
     
     return df_real
 
@@ -90,6 +94,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     sa_E = ((sa_E*1000) / 20000)
     sa_F = ((sa_F*1000) / 20000)
 
+    
     df_real["delta I"] = df_real["I Strom [A]"].diff()  # Erstellt Datenreihe mit Differenz zum jeweils vorherigen Wert
    
     ddl_start_time = None
@@ -133,7 +138,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     if trigger_time is not None:
         print("I max Ueberschritten")
         #verzoegerung zeit bilden
-        trigger_time = trigger_time + sa_t_Delta_Imax
+        trigger_time = trigger_time + sa_t_Delta_Imax 
         
         #gibt den am nächsten liegenden wert nach der verzoegerung der delta I summe zurück
         nearest_sum_delta_I = df_real.loc[df_real["Time [s]"].sub(trigger_time).abs().idxmin(), "sum delta I"] 
@@ -145,6 +150,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
             print("trigger type 1", trigger_type)
 
     # Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
+    #Live Strom nach verzögerung Tmax abfragen
     t_max = ddl_start_time + sa_Tmax
     trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
     delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
@@ -152,8 +158,8 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     # Überprüfung, ob die Steigung nach t_max immer noch größer oder gleich sa_F ist
     if delta_I_delayed >= sa_F:
         if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
-            t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
-            trigger_type = 2  # Status setzen auf Tmax Auslösung
+            t_trigger = trigger_time
+            trigger_type = 2  # Status setzen auf Delta T Auslösung
 
     # Berechnung der Stopzeit, falls die Analyse gestoppt wird
     if ddl_start_time is not None:

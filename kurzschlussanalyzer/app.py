@@ -82,11 +82,11 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.entry_deltaimax.grid(row=11, column=1)
         self.entry_deltaimax.insert(0,"1997")
 
-        self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax: [s]", font=('Segoe UI', 10, 'normal'))
+        self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax: [ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=12, column=0, sticky=tk.W)
         self.entry_tdeltaimax = tk.Entry(self.menu_left_upper, width=10)
         self.entry_tdeltaimax.grid(row=12, column=1)
-        self.entry_tdeltaimax.insert(0,"0.01997")
+        self.entry_tdeltaimax.insert(0,"30")
 
         self.test = tk.Label(self.menu_left_upper, text="SA, Tmax: [ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=13, column=0, sticky=tk.W)
@@ -157,7 +157,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
         self.__read_entrydata()
         # funktionsaufruf realer kurzschluss berechnen
-        df_real = real_current(size_df, l_fl, r_fl, self.df_measure)
+        df_real = real_current(size_df, l_fl, r_fl, self.df_measure, self.u_last)
 
         
         # funktionsaufruf schutzfunktionsanalyse
@@ -176,10 +176,15 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.sa_f = float(self.entry_saf.get())
         self.sa_delta_imax = float(self.entry_deltaimax.get())
         self.sa_t_delta_imax = float(self.entry_tdeltaimax.get())
+        #Zeiteingabe auf ms anpassen
+        self.sa_t_delta_imax =  self.sa_t_delta_imax / 1000
         self.sa_delta_imin = float(self.entry_sadeltaimin.get())
         self.sa_tmax = float(self.entry_satmax.get().replace(',', '.'))
+        #Zeiteingabe auf ms anpassen
+        self.sa_tmax = self.sa_tmax  / 1000
         self.l_fl = float(self.entry_induktivitaet.get())
         self.r_fl = float(self.entry_widerstand.get())
+        self.u_last = float(self.entry_lastspannung.get())
     
     def __update_status(self, new_status: str) -> None:
         self.status.config(text=new_status)
@@ -338,7 +343,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # Funktionsaufruf berechnungen
         
         self.__read_entrydata()
-        df_real = real_current(size_df, self.l_fl, self.r_fl, self.df_measure) # Funktionsaufruf realer kurzschluss berechnen
+        df_real = real_current(size_df, self.l_fl, self.r_fl, self.df_measure, self.u_last) # Funktionsaufruf realer kurzschluss berechnen
         
         # Funktionsaufruf schutzfunktionsanalyse
         ddl_start, ddl_stop, ddl_trigger, trigger_type = safety_function(df_real, self.sa_e, self.sa_f, self.sa_delta_imax, self.sa_t_delta_imax, self.sa_tmax, self.sa_delta_imin)
