@@ -8,9 +8,9 @@ def calculate(df):
 
     # eigene Datenreihe mit den Stromwerten erstellen
     colcurrent = df["I Strom [A]"]
-    #grösster Stromwert im df suchen und in die variable kopieren
+    #groesster Stromwert im df suchen und in die variable kopieren
     i_max = df["I Strom [A]"].max()
-    #grösse vom df auslesen und in variable schreiben
+    #groesse vom df auslesen und in variable schreiben
     size_df = len(df)
     
     # abfragen der Zeit in Zeile 50 (Start Ereigniss)
@@ -80,17 +80,14 @@ def real_current(size_df, l_fl, r_fl, df):
 
 
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
-    #trigger standardmässig auf keine auslösung setzten
+    # Trigger standardmäßig auf keine Ausloesung setzen
     trigger_type = 0
-    extracted_rows = df_real.iloc[45:61]
-    # Gib die ausgewählten Zeilen im Terminal aus (Start des Kurzschluss)
-    print(extracted_rows)
     
-    # F und E werden angepasst an die Messauflösung von 20kHz, Eingabe sa_E & sa_F erfolgt in A/ms (*1000 --> pro Sekunde/ 20000 --> 20kHz im df)
+    # F und E werden angepasst an die Messaufloesung von 20kHz, Eingabe sa_E & sa_F erfolgt in A/ms (*1000 --> pro Sekunde/ 20000 --> 20kHz im df)
     sa_E = ((sa_E*1000) / 20000)
     sa_F = ((sa_F*1000) / 20000)
 
-    # Finden des Startzeitpunkts der Analyse
+    # Finden des Startzeitpunkts der Analyse, wo der Anstieg steiler als E ist
     start_time_indices = df_real[df_real['Delta_I'] >= sa_E].index
 
     # Überprüfen, ob ein Startzeitpunkt existiert
@@ -99,62 +96,62 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         ddl_start_time = df_real.loc[ddl_start_index, 'Time [s]']
     else:
         trigger_type = 0
+        ddl_start_time = None
 
-    # Relevanter Datenbereich der Analyse
-    relevant_df = df_real[(df_real['Time [s]'] >= ddl_start_time) &
-                          (df_real['Time [s]'] <= ddl_start_time + sa_t_Delta_Imax)]
+    # Ausloesezeit
+    t_trigger = None  # Setze den Standardwert auf None, falls keine Ausloesung erfolgt
 
-    # Auslösezeit
-    t_trigger = ddl_start_time + sa_t_Delta_Imax  # Setze Standardwert für den Fall, dass die if-Bedingung nicht erfüllt ist
-    if not relevant_df.empty:
-        delta_I = relevant_df['I Strom [A]'].diff().abs()
-        sum_delta_I = delta_I.cumsum()
-        trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index
+    delta_I = df_real['I Strom [A]'].diff().abs() #erstellt datenreihe mit differenz zum jeweils vorgängigen wert
+    sum_delta_I = delta_I.cumsum()  # erstellt datenreihe mit summe zum jeweils fortlaufenden wert im df
+    trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index #gibt die zeilennummer zurück in welcher zeile die summe groesser als das delta_imax ist
+    
+    # Überprüft, ob es zur Ausloesung kommt, und speichert die Zeit (durch den trigger_index) in die t_trigger-Variable
+    trigger_index = sum_delta_I[sum_delta_I > sa_Delta_Imax].index
+    if not trigger_index.empty:
+        # Überprüfen, ob der Anstieg immer noch steiler als sa_F ist
+        if delta_I.loc[trigger_index[0]] >= sa_F:
+            t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
+            trigger_type = 1 #status setzten auf delta i max ausloesung
+        else:
+            # Der Anstieg ist nicht steil genug delta_imax loest nicht aus! status setzten
+            trigger_type = 0
 
-        if not trigger_index.empty:
-            t_trigger = relevant_df.loc[trigger_index[0], 'Time [s]']
-
-    # Tmax-Schutz
+    #Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
     if ddl_start_time is not None:
         t_max = ddl_start_time + sa_Tmax
-        if t_max < relevant_df['Time [s]'].max():
-            print("Tmax-Schutz ausgelöst.")
-
-    # Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
-    if not relevant_df.empty:
-        delta_Imin_index = sum_delta_I[sum_delta_I < sa_Delta_imin].index
-        if not delta_Imin_index.empty:
-            print("Delta Imin-Schutz ausgelöst.")
+        trigger_index = df_real[df_real['Time [s]'] == t_max].index
+        # Überprüfung, ob die Steigung nach t_max immer noch größer oder gleich sa_F ist
+        if delta_I.loc[trigger_index[0]] >= sa_F:
+            if df_real.loc[trigger_index[0], 'Time [s]'] < trigger_time: #überprüfen ob dieser schutz zuerst ausloest
+                t_trigger = df_real.loc[trigger_index[0], 'Time [s]']
+                trigger_type = 2 #status setzten auf Tmax ausloesung
         else:
-            t_ddl_delta_t = relevant_df['Time [s]'].max()
-            delta_t_condition = t_ddl_delta_t - ddl_start_time
-            if delta_t_condition > sa_Tmax:
-                print("DDL+ Delta T-Schutz ausgelöst.")
-
-    return ddl_start_time, ddl_start_time + sa_t_Delta_Imax, t_trigger, trigger_type
-
-# Weitere Ergänzungen basierend auf Ihren spezifischen Anforderungen
+            # es kommt zu keiner ausloesung
+            trigger_type = 0  # Setz den status auf keine ausloesung
 
 
-
-
-
-
-
-
-
-
- 
+        if trigger_time is not None:
+        # Finden des Index für die trigger_time
+            trigger_index = df_real[df_real['Time [s]'] == trigger_time].index
     
+        # Überprüfen, ob der Stromwert zum Zeitpunkt der trigger_time größer als sa_Delta_imin ist
+        if not df_real.loc[trigger_index[0], 'I Strom [A]'] > sa_Delta_imin:
+        # Stromwert nicht ist größer als sa_Delta_imin, es passiert nichts
+            trigger_type = 0
+            trigger_time = None
+        
+
+    # Berechnung der Stopzeit, falls die Analyse gestoppt wird
+    for idx, row in df_real.iterrows():
+        if row['Time [s]'] >= ddl_start_time:
+            if row['Delta_I'] < sa_F:
+                ddl_stop_time = row['Time [s]']
+                trigger_type = 0
+                break
+
+    return ddl_start_time, ddl_stop_time, t_trigger, trigger_type
 
 
-"""
 
-        # Analyse des df_real DataFrames
-        result = safety_function(df_real, 1e3, 1e3, 1, 5)
-        if result:
-            print(f"Auslösung aktiviert bei {result} s")
-        else:
-            print("Keine Auslösung aktiviert.")
 
-"""
+

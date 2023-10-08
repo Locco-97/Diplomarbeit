@@ -317,9 +317,13 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         yMin, yMax = plot2.get_ylim()
         yMean = (yMax - yMin) * 0.75 #Beschriftungsposition festlegen auf 75% höhe
 
+
+        # Anzeigelinien in Plot
         for text, pos in points.items():
-            plot2.axvline(x=pos, linestyle="--")
-            plot2.text(pos, yMean, text, ha='center', va='center',rotation='vertical', bbox={'facecolor':'white', 'pad':4})
+            if pos is not None:
+                plot2.axvline(x=pos, linestyle="--")
+                plot2.text(pos, yMean, text, ha='center', va='center', rotation='vertical', bbox={'facecolor':'white', 'pad':4})
+
 
         # platzieren der Ausgabefenster
         canvas1.get_tk_widget().grid(column=1, row=3, columnspan=5, pady=5)
