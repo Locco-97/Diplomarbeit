@@ -84,7 +84,7 @@ def real_current(size_df, l_fl, r_fl, df, u_last):
 
 
 def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax, sa_Delta_imin):
-    # Trigger standardmäßig auf keine Auslösung setzen
+    # Trigger standardmässig auf keine Auslösung setzen
     trigger_type = 0
     ddl_start_time = None
     t_trigger = None
@@ -155,7 +155,7 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
     delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
 
-    # Überprüfung, ob die Steigung nach t_max immer noch größer oder gleich sa_F ist
+    # Überprüfung, ob die Steigung nach t_max immer noch grösser oder gleich sa_F ist
     if delta_I_delayed >= sa_F:
         if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
             t_trigger = trigger_time
@@ -173,11 +173,12 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
             else:
                 ddl_stop_time = None
                 
-    #Stromwert zum Zeitpunkt der ausloesung abfragen:
-    live_current = df_real.loc[df_real["Time [s]"].sub(t_trigger).abs().idxmin(), "I Strom [A]"]
-    if not live_current > sa_Delta_imin:
-        trigger_type = 5
-        t_trigger = None
+    #Stromwert zum Zeitpunkt der ausloesung abfragen, falls zeit in t_trigger geschrieben wurde und anschliessend Imin überprüfen
+    if t_trigger is not None:
+        live_current = df_real.loc[df_real["Time [s]"].sub(t_trigger).abs().idxmin(), "I Strom [A]"]
+        if not live_current > sa_Delta_imin:
+            trigger_type = 5
+            t_trigger = None
 
 
     return ddl_start_time, ddl_stop_time, t_trigger, trigger_type

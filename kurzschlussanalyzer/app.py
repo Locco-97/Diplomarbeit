@@ -53,13 +53,13 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=6, column=0, sticky=tk.W)
         self.entry_induktivitaet = tk.Entry(self.menu_left_upper, width=10)
         self.entry_induktivitaet.grid(row=6, column=1)
-        self.entry_induktivitaet.insert(0,"0.005")
+        self.entry_induktivitaet.insert(0,"")
 
         self.test = tk.Label(self.menu_left_upper, text="Leitungswiderstand: ", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=7, column=0, sticky=tk.W)
         self.entry_widerstand = tk.Entry(self.menu_left_upper, width=10)
         self.entry_widerstand.grid(row=7, column=1)
-        self.entry_widerstand.insert(0,"0.25")
+        self.entry_widerstand.insert(0,"")
 
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
         self.sep.grid(row=8, column=0,ipadx=70, pady=10, columnspan=2)
@@ -304,7 +304,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # --- Plot 2 ---
         # plot style einstellungen
         plot2.grid()
-        plot2.set_title("Diagramm Berechung Kurzschluss")
+        plot2.set_title("Diagramm Berechnung Kurzschluss")
         plot2.set_xlabel("Time [s]")
         plot2.set_ylabel("Strom [A]", color="g")
  
