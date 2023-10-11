@@ -68,7 +68,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=9, column=0, sticky=tk.W)
         self.entry_sae = tk.Entry(self.menu_left_upper, width=10)
         self.entry_sae.grid(row=9, column=1)
-        self.entry_sae.insert(0,"20")
+        self.entry_sae.insert(0,"40")
 
         self.test = tk.Label(self.menu_left_upper, text="SA, F: [A/ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=10, column=0, sticky=tk.W)
@@ -80,13 +80,13 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=11, column=0, sticky=tk.W)
         self.entry_deltaimax = tk.Entry(self.menu_left_upper, width=10)
         self.entry_deltaimax.grid(row=11, column=1)
-        self.entry_deltaimax.insert(0,"1997")
+        self.entry_deltaimax.insert(0,"1800")
 
         self.test = tk.Label(self.menu_left_upper, text="SA, t Delta Imax: [ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=12, column=0, sticky=tk.W)
         self.entry_tdeltaimax = tk.Entry(self.menu_left_upper, width=10)
         self.entry_tdeltaimax.grid(row=12, column=1)
-        self.entry_tdeltaimax.insert(0,"30")
+        self.entry_tdeltaimax.insert(0,"1")
 
         self.test = tk.Label(self.menu_left_upper, text="SA, Tmax: [ms]", font=('Segoe UI', 10, 'normal'))
         self.test.grid(row=13, column=0, sticky=tk.W)
@@ -98,7 +98,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=14, column=0, sticky=tk.W)
         self.entry_sadeltaimin = tk.Entry(self.menu_left_upper, width=10)
         self.entry_sadeltaimin.grid(row=14, column=1)
-        self.entry_sadeltaimin.insert(0,"900")
+        self.entry_sadeltaimin.insert(0,"400")
 
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
         self.sep.grid(row=15, column=0,ipadx=70, pady=10, columnspan=2)
