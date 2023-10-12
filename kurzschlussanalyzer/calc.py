@@ -153,13 +153,14 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     #Live Strom nach verzögerung Tmax abfragen
     t_max = ddl_start_time + sa_Tmax
     trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
-    delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
+    if trigger_time is not None:
+        delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
 
-    # Überprüfung, ob die Steigung nach t_max immer noch grösser oder gleich sa_F ist
-    if delta_I_delayed >= sa_F:
-        if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
-            t_trigger = trigger_time
-            trigger_type = 2  # Status setzen auf Delta T Auslösung
+        # Überprüfung, ob die Steigung nach t_max immer noch grösser oder gleich sa_F ist
+        if delta_I_delayed >= sa_F:
+            if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
+                t_trigger = trigger_time
+                trigger_type = 2  # Status setzen auf Delta T Auslösung
 
     # Berechnung der Stopzeit, falls die Analyse gestoppt wird
     if ddl_start_time is not None:

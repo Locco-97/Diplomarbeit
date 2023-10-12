@@ -37,6 +37,8 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.test.grid(row=1, column=0, columnspan=2)
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
         self.sep.grid(row=2, column=0,ipadx=70, pady=10, columnspan=2)
+        
+        #Taster für Dateiaufruf erstellen
         self.button_file_select = tk.Button(self.menu_left_upper, text="Explorer", command=self.__browse_files)
         self.button_file_select.grid(row=3, column=0, columnspan=2)
         self.sep = ttk.Separator(self.menu_left_upper, orient="horizontal")
@@ -106,6 +108,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.menu_left_upper.pack(side="top", fill="both", expand=True)
         self.menu_left_lower.pack(side="top", fill="both", expand=True)
         
+        #Taster für Neuberechnung
         self.button_update = tk.Button(self.menu_left_upper, text="Update", command=self.__update_calc)
         self.button_update.grid(row=16, column=0, columnspan=2)
 
@@ -130,8 +133,9 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.status.config(text=new_status)
         self.root.update() 
     
-    def run(self) -> None:
-        self.root.mainloop()
+#    def run(self) -> None:
+#        self.root.mainloop()
+#   def main():
     def __browse_files(self) -> None:
         self.__update_status("Datei auswählen...")
         self.__filename = filedialog.askopenfilename(
@@ -200,9 +204,10 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         endflag = False   # Flag, um das Ende zu markieren
         startflag = False # Flag, um den Start zu markieren
 
+        df = None
         #ausgewählte CSV-Datei in DataFrame einlesen
         df = pd.read_csv(self.__filename, sep=",")
-
+        
         #Dataframe reduzieren auf relevante Spalten und überschrift vergeben
         df = df.iloc[:, [0, 5, 10]]
         df.columns = ["Time [s]", "I Strom [A]", "U Spannung [V]"]
@@ -210,15 +215,15 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
          # Überprüfen, ob das Verfahren 50V oder 600V basiert auf den ersten Zeilen
         avg_voltage_first_rows = df["U Spannung [V]"].head(50).mean()
         if avg_voltage_first_rows < 100:  # Mittelwert ersten 50 Messungen <100VDC
-            Messverfahren = 1  # Merker Messverfahren = 1
+            measurement_var = 1  # Merker Messverfahren = 1
         else:
-            Messverfahren = 0  # Merker Messverfahren 2
+            measurement_var = 0  # Merker Messverfahren 2
 
         # Die Strom-Spalte in einer separaten Variable speichern
         colcurrent = df["I Strom [A]"]
 
         #<50 VDC Ereignissanalyse
-        if Messverfahren == 1:
+        if measurement_var == 1:
             # Schleife über die Zeilen des DataFrames
             for i, row in df.iterrows():
                 voltage_value = row.iloc[2]  # Spannungswert für die aktuelle Zeile
@@ -250,7 +255,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
                     self.df_measure = self.df_measure.reset_index()
        
         #>50VDC Ereignissanalyse
-        if Messverfahren != 1:
+        if measurement_var != 1:
             # Schleife über die Zeilen des DataFrames
             for i, row in df.iterrows():
                 current_value = row.iloc[1]  # Stromwert für die aktuelle Zeile
