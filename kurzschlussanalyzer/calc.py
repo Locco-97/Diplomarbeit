@@ -62,15 +62,16 @@ def real_current(size_df, l_fl, r_fl, df, u_last):
     i_real = u_max / r_fl
     
     # df erweitern für den Fall, dass die manuelle Eingabe verwendet wird... Wenn keine Messung existiert
-    size_df = size_df * 1.1
+    size_df = size_df * 1.5
+    
     
     # Erstellen eines DataFrames für den realen Kurzschluss,
     # bei dem die ersten 50 Zeitschritte negative Werte haben
     data = {"Time [s]": np.arange(-0.0025, (size_df * 0.00005) - 0.0025, 0.00005)}
-    df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]", "U Spannung [V]"])
+    df_real = pd.DataFrame(data, columns=["Time [s]", "I Strom [A]"])
     
     # Werte für die ersten 50 Zeilen explizit auf 0 setzen
-    df_real.loc[:49, ["I Strom [A]", "U Spannung [V]"]] = 0
+    df_real.loc[:49, ["I Strom [A]"]] = 0
     
     # Berechnen und Zuweisen der tatsächlichen Werte ab dem Index 50
     df_real.loc[50:, "I Strom [A]"] = df_real.loc[50:, "Time [s]"].apply(lambda t: i_real * (1 - np.exp((-r_fl / l_fl) * t)))
@@ -88,7 +89,8 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
     trigger_type = 0
     ddl_start_time = None
     t_trigger = None
-    trigger_index = None
+    trigger_time = None
+
     
     # F und E werden angepasst an die Messaufloesung von 20kHz, Eingabe sa_E & sa_F erfolgt in A/ms (*1000 --> pro Sekunde/ 20000 --> 20kHz im df)
     sa_E = ((sa_E*1000) / 20000)
@@ -104,10 +106,8 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         if row["delta I"] >= sa_E:
             ddl_start_time = row["Time [s]"]
             start_flag = True
-            ddl_max_time = ddl_start_time + sa_t_Delta_Imax
             print("analyse gestartet")
             break
-    
     
     if not start_flag:
         trigger_type = 0
@@ -116,6 +116,11 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         t_trigger = None
         print("analyse nicht gestartet")
         return ddl_start_time, ddl_stop_time, t_trigger, trigger_type
+    
+    if sa_Tmax >= sa_t_Delta_Imax:
+        ddl_max_time = ddl_start_time + sa_Tmax
+    else:
+        ddl_max_time = ddl_start_time + sa_t_Delta_Imax 
     
     print(df_real)
     
@@ -133,34 +138,59 @@ def safety_function(df_real, sa_E, sa_F, sa_Delta_Imax, sa_t_Delta_Imax, sa_Tmax
         df_real.at[index, "sum delta I"] = cum_sum
     print(df_real)
     
-    trigger_time = df_real.loc[df_real["sum delta I"] > sa_Delta_Imax, "Time [s]"].min()
+    if df_real["sum delta I"].gt(sa_Delta_Imax).any():
+        trigger_time = df_real.loc[df_real["sum delta I"] >= sa_Delta_Imax, "Time [s]"].min()
+
+    else:
+        trigger_type = 6
+    
+    #trigger_time = df_real.loc[df_real["sum delta I"] > sa_Delta_Imax, "Time [s]"].min()
+    print("start df real neu",df_real[df_real["Time [s]"] == trigger_time])
+
+    
+    
     #wenn ein wert gefunden wurde
     if trigger_time is not None:
-        print("I max Ueberschritten")
+        print("trigger_time != None", trigger_time)
         #verzoegerung zeit bilden
         trigger_time = trigger_time + sa_t_Delta_Imax 
-        
+        print("trigger_time 2", trigger_time)    
         #gibt den am nächsten liegenden wert nach der verzoegerung der delta I summe zurück
-        nearest_sum_delta_I = df_real.loc[df_real["Time [s]"].sub(trigger_time).abs().idxmin(), "sum delta I"] 
-        #ueberpruefen ob delta I noch immer groesser delta I max ist
-        if nearest_sum_delta_I >= sa_Delta_Imax:
-            # Die Bedingung ist nach der Verzögerung immer noch erfüllt
-            t_trigger = trigger_time  # Zeitpunkt nach der Verzögerung
-            trigger_type = 1  # Setze trigger_type auf 1
-            print("trigger type 1", trigger_type)
+        nearest_sum_delta_I = df_real.loc[df_real["Time [s]"].sub(trigger_time).abs().idxmin(), "sum delta I"]
+        
+        print(nearest_sum_delta_I, "trigger 1!!!!!!!!") 
+        if nearest_sum_delta_I is not None:
+            #ueberpruefen ob delta I noch immer groesser delta I max ist
+            if nearest_sum_delta_I >= sa_Delta_Imax:
+                # Die Bedingung ist nach der Verzögerung immer noch erfüllt
+                t_trigger = trigger_time  # Zeitpunkt nach der Verzögerung
+                trigger_type = 1  # Setze trigger_type auf 1
+                print("trigger type 1", trigger_type)
+        else: 
+            t_trigger = None
+            trigger_type = 0
 
     # Teil 2 (DDL+ Delta T) und Sperrschwelle (Delta Imin)
-    #Live Strom nach verzögerung Tmax abfragen
-    t_max = ddl_start_time + sa_Tmax
-    trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
-    if trigger_time is not None:
+    if ddl_start_time is not None:
+        #Live Strom nach verzögerung Tmax abfragen
+        t_max = ddl_start_time + sa_Tmax
+        #nächstliegender Stromwert nach der Verzögerung suchen
+        trigger_time = df_real.loc[df_real["Time [s]"].sub(t_max).abs().idxmin(), "Time [s]"]
+        print(trigger_time, "2!!!!!!!!!")
         delta_I_delayed  = df_real.loc[df_real["Time [s]"] == trigger_time, "delta I"].values[0]
+        print("Triggertime Analyse 2")
 
         # Überprüfung, ob die Steigung nach t_max immer noch grösser oder gleich sa_F ist
         if delta_I_delayed >= sa_F:
-            if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
+            if t_trigger is not None:
+                if trigger_time < t_trigger:  # Überprüfen ob dieser Schutz zuerst auslöst
+                    t_trigger = trigger_time
+                    trigger_type = 2  # Status setzen auf Delta T Auslösung
+            else:
                 t_trigger = trigger_time
                 trigger_type = 2  # Status setzen auf Delta T Auslösung
+        if delta_I_delayed < sa_F and t_trigger is None:
+            trigger_type = 7
 
     # Berechnung der Stopzeit, falls die Analyse gestoppt wird
     if ddl_start_time is not None:

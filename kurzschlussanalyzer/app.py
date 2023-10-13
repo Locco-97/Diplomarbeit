@@ -14,6 +14,9 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
     def __del__(self):
         pass
+    
+    def run(self) -> None:
+        self.root.mainloop()
 
     def __init__(self):
         self.root = tk.Tk()
@@ -133,15 +136,13 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         self.status.config(text=new_status)
         self.root.update() 
     
-#    def run(self) -> None:
-#        self.root.mainloop()
-#   def main():
     def __browse_files(self) -> None:
         self.__update_status("Datei auswählen...")
         self.__filename = filedialog.askopenfilename(
             title="Select a File",
             filetypes=(("CSV-files", ".csv"), ("all files", ".")),
         )
+        self.__update_status("Datei wird geöffnet...")
 
         self.__get_measurement_data()  # funktionsaufruf daten einlesen, df generieren
 
@@ -344,7 +345,6 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         
     def __update_calc(self) -> None:
         # neuaufruf 
-        #self.__get_measurement_data()  # Funktionsaufruf daten einlesen, df generieren
         r_fl, l_fl, tau, size_df = calculate(self.df_measure) # Funktionsaufruf berechnungen
         
         self.__read_entrydata()
@@ -369,14 +369,20 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
             self.__update_status("Auslösung durch Tmax-Schutz")
             print("status 3", self.__update_status)
         elif trigger_type == 4:
-            self.__update_status("keine Auslösung, Anstieg < F")
+            self.__update_status("keine Auslösung, Anstieg < F, innerhalb der Verzögerung")
             print("status 4", self.__update_status)
         elif trigger_type == 5:
             self.__update_status("keine Auslösung, I < Imin")
-            print("status 35", self.__update_status)
+            print("status 5", self.__update_status)
+        elif trigger_type == 6:
+            self.__update_status("keine Auslösung, delta I max nicht erreicht")
+            print("status 6", self.__update_status)
         elif trigger_type == 0:
             self.__update_status("Analyse nicht gestartet")
             print("status 0", self.__update_status)
+        elif trigger_type == 7:
+            self.__update_status("keine Auslösung, delta T nicht vor F unterschreitung erreicht")
+            print("status 6", self.__update_status)
         else:
             self.__update_status("Unbekannter Status, support by +41 78 854 30 59")
             print("status x", self.__update_status)
