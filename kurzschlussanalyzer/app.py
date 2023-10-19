@@ -297,7 +297,7 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # --- Plot 1 ---
         # plot style einstellungen
         plot1.grid()
-        plot1.set_title("Diagramm Kurzschluss")
+        plot1.set_title("Messkurve")
         plot1.set_xlabel("Zeit [s]")
         plot1.set_ylabel("Strom [A]", color="g")
         secay = plot1.secondary_yaxis("right")
@@ -310,8 +310,8 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
         # --- Plot 2 ---
         # plot style einstellungen
         plot2.grid()
-        plot2.set_title("Diagramm Berechnung Kurzschluss")
-        plot2.set_xlabel("Time [s]")
+        plot2.set_title("Berechneter Kurzschlussverlauf")
+        plot2.set_xlabel("Zeit [s]")
         plot2.set_ylabel("Strom [A]", color="g")
  
 
