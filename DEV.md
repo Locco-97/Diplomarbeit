@@ -13,5 +13,5 @@ Um das neue Python Projekt zu nutzen müssen folgende Schritte durchgeführt wer
 
 ### Ausführbare Datei erstellen
 - Git Bash öffnen im Ornder Diplomarbeit (kontrollieren mit Befehl `pwd`)
-- Datei generieren: `pyinstaller --onefile <Dateiname>.py`
+- Datei generieren: `pyinstaller --onefile kurzschlussanalyzer.py --add-data kurzschlussanalyzer/images/.:kurzschlussanalyzer/images --noconsole --icon=kurzschlussanalyzer/images/blt.ico`
 - Datei wird unter dem Ordner *Dist* abgelegt. 
