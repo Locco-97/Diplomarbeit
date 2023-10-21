@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ "$(uname)" == "Darwin" ]; then
+    # Do something under Mac OS X platform
+    pyinstaller --onefile kurzschlussanalyzer.py --add-data kurzschlussanalyzer/images/.:kurzschlussanalyzer/images --noconsole --icon=kurzschlussanalyzer/images/blt.ico 
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+    # Do something under 64 bits Windows NT platform
+    pyinstaller --onefile kurzschlussanalyzer.py --add-data "kurzschlussanalyzer/images/*.png;kurzschlussanalyzer/images/" --noconsole --icon="kurzschlussanalyzer/images/blt.ico"
+fi
