@@ -14,6 +14,10 @@ import os
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+
+    if "kurzschlussanalyzer" in base_path:
+        base_path = os.getcwd()
+
     return os.path.join(base_path, relative_path)
 
 class App():    #Hauptanwendung mit Absprung in Unterprogromme
@@ -27,7 +31,6 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Diplomarbeit M-Thoma - FL-Rechner")
-        # self.root.iconphoto(False, tk.PhotoImage(file="kurzschlussanalyzer/images/blt_icon.png"))
         self.root.iconphoto(False, tk.PhotoImage(file=resource_path("kurzschlussanalyzer/images/blt_icon.png")))
 
         img = Image.open(resource_path("kurzschlussanalyzer/images/blt_long.png"))
