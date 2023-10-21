@@ -6,3 +6,6 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     # Do something under 64 bits Windows NT platform
     pyinstaller --onefile kurzschlussanalyzer.py --add-data "kurzschlussanalyzer/images/*.png;kurzschlussanalyzer/images/" --noconsole --icon="kurzschlussanalyzer/images/blt.ico"
 fi
+
+#zum erstellen des exe auf dem jeweiligen System wo es erstellt werden soll.
+#zum erstellen im terminal `./exe_bilder` eingeben

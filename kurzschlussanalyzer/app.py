@@ -21,16 +21,13 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class App():    #Hauptanwendung mit Absprung in Unterprogromme
-
-    def __del__(self):
-        pass
     
-    def run(self) -> None:
-        self.root.mainloop()
+    def run(self) -> None: 
+        self.root.mainloop() #hält das GUI am laufen
 
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Diplomarbeit M-Thoma - FL-Rechner")
+        self.root.title("Diplomarbeit M-Thoma - Kurzschlussanalyzer")
         self.root.iconphoto(False, tk.PhotoImage(file=resource_path("kurzschlussanalyzer/images/blt_icon.png")))
 
         img = Image.open(resource_path("kurzschlussanalyzer/images/blt_long.png"))
@@ -138,9 +135,6 @@ class App():    #Hauptanwendung mit Absprung in Unterprogromme
 
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
-
-        # mainloop
-        self.root.mainloop()
 
     def __update_status(self, new_status: str) -> None:
         self.status.config(text=new_status)
